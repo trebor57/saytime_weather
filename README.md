@@ -51,7 +51,7 @@ sudo apt install devscripts debhelper
 dpkg-buildpackage -us -uc
 ```
 
-The package will be created in the parent directory as `saytime-weather_1.1.3_all.deb`
+The package will be created in the parent directory as `saytime-weather_1.1.2_all.deb`
 
 ### Manual Installation
 
