@@ -144,14 +144,23 @@ if (!$options{use_24hour}) {
     }
 }
 
-# Build the command
-my $cmd = "asterisk -rx 'dialplan exec saytime ";
-$cmd .= qq{"$hour_sound" };  # Use double quotes for file paths
-$cmd .= qq{"$minute_sound" };  # Use double quotes for file paths
-$cmd .= qq{"$ampm_sound" } if $ampm_sound;  # Use double quotes for file paths
-$cmd .= "$options{node_number}'";  # Node number doesn't need quotes
+# Create the concatenated sound file
+my $output_file = File::Spec->catfile(TMP_DIR, "current-time");
+my $sound_files = "$hour_sound $minute_sound";
+$sound_files .= " $ampm_sound" if $ampm_sound;
 
-# Execute the command
+# Concatenate the sound files
+my $cat_result = system("cat $sound_files > $output_file");
+if ($cat_result != 0) {
+    ERROR("Failed to create sound file: $output_file");
+    exit 1;
+}
+
+# Set proper permissions
+chmod 0644, $output_file or WARN("Failed to set permissions on $output_file: $!");
+
+# Build and execute the Asterisk command
+my $cmd = "asterisk -rx 'localplay $output_file'";
 INFO("Executing command: $cmd");
 system($cmd);
 my $exit_code = $? >> 8;

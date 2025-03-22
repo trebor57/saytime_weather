@@ -1,3 +1,12 @@
+saytime-weather (1.1.9) unstable; urgency=medium
+
+  * Fixed Asterisk command to use localplay correctly
+  * Improved sound file concatenation
+  * Added proper file permissions for concatenated sound file
+  * Removed incorrect dialplan exec command
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:50:00 -0500
+
 saytime-weather (1.1.8) unstable; urgency=medium
 
   * Fixed Asterisk command construction with proper quoting
