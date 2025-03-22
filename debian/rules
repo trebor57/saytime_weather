@@ -6,9 +6,15 @@ override_dh_auto_install:
 	dh_auto_install
 	install -d debian/saytime-weather/usr/local/sbin
 	install -d debian/saytime-weather/usr/share/asterisk/sounds/en/wx
-	install -m 755 saytime.pl weather.pl debian/saytime-weather/usr/local/sbin/
+	install -m 755 saytime.pl debian/saytime-weather/usr/local/sbin/
+	install -m 755 weather.pl debian/saytime-weather/usr/local/sbin/
 	install -m 644 sounds/a-m.ulaw sounds/p-m.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/
 	install -m 644 sounds/*.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/a-m.ulaw sounds/p-m.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/
 	chown -R asterisk:asterisk debian/saytime-weather/usr/share/asterisk/sounds
-	chown root:asterisk debian/saytime-weather/usr/local/sbin/*.pl 
+	chown root:asterisk debian/saytime-weather/usr/local/sbin/*.pl
+
+override_dh_perl:
+	dh_perl --no-installman --no-installscript --no-installplib
+
+override_dh_usrlocal:
+	dh_usrlocal --skip-subdirs --skip-executables 
