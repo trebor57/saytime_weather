@@ -1,0 +1,33 @@
+Format: 1.8
+Date: Sat, 22 Mar 2024 12:00:00 +0000
+Source: saytime-weather
+Binary: saytime-weather
+Architecture: source all
+Version: 1.0.0
+Distribution: unstable
+Urgency: medium
+Maintainer: Jory A. Pratt <geekypenguin@gmail.com>
+Changed-By: Jory A. Pratt <geekypenguin@gmail.com>
+Description:
+ saytime-weather - SayTime and Weather scripts for Asterisk
+Changes:
+ saytime-weather (1.0.0) unstable; urgency=medium
+ .
+   * Initial release
+   * Includes saytime.pl and weather.pl scripts
+   * Includes sound files for time and weather announcements
+Checksums-Sha1:
+ fb4353d791d8af5788b5189f2c49aaa7aa34ef0d 544 saytime-weather_1.0.0.dsc
+ afa788dcd2cab7f5b4ec43721153c640321d604d 422997 saytime-weather_1.0.0.tar.gz
+ 031a7c30e3343cfd718cfae0513e5c75c55a00c4 161720 saytime-weather_1.0.0_all.deb
+ 330e9bdc463c9e187399b6fbcf12f8a04a2a620d 5344 saytime-weather_1.0.0_arm64.buildinfo
+Checksums-Sha256:
+ 16e6f815b6ef04d1c84708f49437b174d711cfbce16d8e936afca207ad61263c 544 saytime-weather_1.0.0.dsc
+ 6a47000aa62b20fcb5644c07751469d16187b0d24146f2aaf03f969555ad37f6 422997 saytime-weather_1.0.0.tar.gz
+ c4d1111a4823a750b4aeaf2ac11b6216c5714072f31d8879f6cca9265b55799c 161720 saytime-weather_1.0.0_all.deb
+ 7943ada087ae8735d6de151c27b21c8886b3ab5415d1aea82c11a985ad8e4a79 5344 saytime-weather_1.0.0_arm64.buildinfo
+Files:
+ e33440c1e0b51c242ca794aa77db41e6 544 utils optional saytime-weather_1.0.0.dsc
+ 9417b2d661be8de1575913a5375e6bd0 422997 utils optional saytime-weather_1.0.0.tar.gz
+ abb613d88139b35edf23cee153c9b990 161720 utils optional saytime-weather_1.0.0_all.deb
+ 64e23ce2795cec0a2adc3dc9701ab5ef 5344 utils optional saytime-weather_1.0.0_arm64.buildinfo
