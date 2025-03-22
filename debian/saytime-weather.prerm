@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+# Remove sound files
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    rm -f /usr/share/asterisk/sounds/en/a-m.ulaw
+    rm -f /usr/share/asterisk/sounds/en/p-m.ulaw
+    rm -rf /usr/share/asterisk/sounds/en/wx
+fi
+
+# Update locate database after removal
+if [ -x /usr/bin/updatedb ]; then
+    echo "Updating locate database..."
+    /usr/bin/updatedb
+fi
+
+#DEBHELPER# 

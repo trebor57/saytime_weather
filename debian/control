@@ -1,0 +1,22 @@
+Source: saytime-weather
+Section: utils
+Priority: optional
+Maintainer: Jory A. Pratt <geekypenguin@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.5.1
+
+Package: saytime-weather
+Architecture: all
+Depends: ${misc:Depends}, perl, asterisk, plocate, libwww-perl, libjson-perl
+Description: SayTime and Weather scripts for Asterisk
+ This package provides Perl scripts for Asterisk to announce
+ time and weather conditions using sound files.
+ .
+ The package includes:
+  * saytime.pl - Script to announce current time
+  * weather.pl - Script to announce weather conditions
+  * Sound files for time and weather announcements
+ .
+ The package requires plocate for sound file management and
+ asterisk for audio playback. Weather script requires
+ libwww-perl and libjson-perl for weather data retrieval. 

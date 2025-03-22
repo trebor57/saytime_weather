@@ -1,0 +1,52 @@
+#!/bin/sh
+
+set -e
+
+# Run updatedb to update the locate database
+if [ -x /usr/bin/updatedb ]; then
+    echo "Updating locate database..."
+    /usr/bin/updatedb
+fi
+
+# Ensure proper ownership of sound files
+if [ -d /usr/share/asterisk/sounds/en ]; then
+    chown -R asterisk:asterisk /usr/share/asterisk/sounds/en/wx
+    chown asterisk:asterisk /usr/share/asterisk/sounds/en/a-m.ulaw /usr/share/asterisk/sounds/en/p-m.ulaw
+fi
+
+# Ensure proper ownership of scripts
+if [ -d /usr/local/sbin ]; then
+    chown root:asterisk /usr/local/sbin/saytime.pl /usr/local/sbin/weather.pl
+    chmod 755 /usr/local/sbin/saytime.pl /usr/local/sbin/weather.pl
+fi
+
+# Display post-installation instructions
+cat << EOF
+
+=== Post Installation Instructions ===
+1. Time Announcements Setup:
+   To setup automatic time announcements, add the following to root's crontab:
+   Run: sudo crontab -e
+
+   Add the line (modify time/zip/node as needed):
+   00 07-23 * * * (/usr/bin/nice -19 /usr/local/sbin/saytime.pl 77511 546054 > /dev/null)
+
+   This will announce time hourly from 7AM to 11PM
+
+2. Weather Configuration:
+   To configure weather reporting, create or edit /etc/asterisk/local/weather.ini:
+   Example content:
+   process_condition="YES"
+   Temperature_mode="F"
+   api_Key="your_wunderground_api_key"  # Only needed for wunderground stations
+
+3. Testing Installation:
+   Test time announcement: /usr/local/sbin/saytime.pl <zip> <node>
+   Test weather report: /usr/local/sbin/weather.pl <zip/airport/station>
+
+Note: Replace zip codes, node numbers, and API keys with your own values.
+=====================================
+
+EOF
+
+#DEBHELPER# 

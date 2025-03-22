@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_install:
+	dh_auto_install
+	install -d debian/saytime-weather/usr/local/sbin
+	install -d debian/saytime-weather/usr/share/asterisk/sounds/en/wx
+	install -m 755 saytime.pl weather.pl debian/saytime-weather/usr/local/sbin/
+	install -m 644 sounds/a-m.ulaw sounds/p-m.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/
+	install -m 644 sounds/*.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
+	install -m 644 sounds/a-m.ulaw sounds/p-m.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/
+	chown -R asterisk:asterisk debian/saytime-weather/usr/share/asterisk/sounds
+	chown root:asterisk debian/saytime-weather/usr/local/sbin/*.pl 
