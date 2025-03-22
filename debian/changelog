@@ -1,15 +1,3 @@
-saytime-weather (1.1.5) unstable; urgency=medium
-
-  * Simplified command line arguments in saytime.pl:
-    - Now only accepts zipcode, node, silent, and 24hour options
-    - Removed hour and minute arguments
-    - Added better argument validation and usage messages
-  * Fixed argument handling to use current time only
-  * Improved error messages for invalid arguments
-  * Enhanced documentation for command line usage
-
- -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 20 Mar 2024 12:00:00 -0500
-
 saytime-weather (1.1.4) unstable; urgency=medium
 
   * Fixed variable declaration issues in saytime.pl
