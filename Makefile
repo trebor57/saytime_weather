@@ -20,11 +20,6 @@ check-deps:
 		echo "You can install it with: sudo apt-get install plocate"; \
 		exit 1; \
 	fi
-	@if ! command -v asterisk >/dev/null 2>&1; then \
-		echo "Error: asterisk is not installed. Please install it first."; \
-		echo "You can install it with: sudo apt-get install asterisk"; \
-		exit 1; \
-	fi
 	@echo "Dependencies check passed."
 
 # Install scripts
@@ -41,7 +36,6 @@ install: check-deps $(SCRIPTS)
 	@echo "Run: sudo crontab -e"
 	@echo "Add the line (modify time/zip/node as needed):"
 	@echo "00 07-23 * * * (/usr/bin/nice -19 /usr/local/sbin/saytime.pl 77511 546054 > /dev/null)"
-	@echo "Update the zip code and node number for your installation
 	@echo "This will announce time hourly from 7AM to 11PM"
 	@echo "=====================================\n"
 
