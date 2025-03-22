@@ -93,82 +93,33 @@ setup_logging();
 # Validate options
 validate_options();
 
-# Get current time
-my $now = Time::Piece->new;
-my $hour = $now->hour;
-my $minute = $now->minute;
+# Get current time in specified timezone
+my $now = get_current_time();
 
-# If hour and minute are provided, use them instead
-if (defined $hour_arg) {
-    $hour = $hour_arg;
-}
-if (defined $minute_arg) {
-    $minute = $minute_arg;
-}
+# Process time and weather
+my $time_sound_files = process_time($now, $options{use_24hour});
+my $weather_sound_files = process_weather($options{location_id});
 
-# Create time string for logging
-my $time_str = sprintf("%02d:%02d", $hour, $minute);
+# Combine and play
+my $output_file = File::Spec->catfile(TMP_DIR, "current-time.ulaw");
+my $final_sound_files = combine_sound_files($time_sound_files, $weather_sound_files);
 
-# Log the announcement
-INFO("Announcing time: $time_str");
-
-# Get the current time in the specified timezone
-my $time = Time::Piece->new;
-if ($options{timezone}) {
-    $time = $time->localtime($options{timezone});
+if ($options{dry_run}) {
+    INFO("Dry run mode - would play: $final_sound_files");
+    exit 0;
 }
 
-# Format the time based on 12/24 hour setting
-my $hour_str;
-if ($options{twelve_hour}) {
-    my $hour_12 = $time->hour % 12;
-    $hour_12 = 12 if $hour_12 == 0;
-    $hour_str = sprintf("%d", $hour_12);
-} else {
-    $hour_str = sprintf("%02d", $time->hour);
+if ($final_sound_files) {
+    create_output_file($final_sound_files, $output_file);
 }
 
-# Get the minute sound file
-my $minute_sound = get_sound_file("$minute");
-if (!$minute_sound) {
-    ERROR("Could not find minute sound file for $minute");
-    exit 1;
+if ($options{silent} == 0) {
+    play_announcement($output_file, $options{node_number});
+    cleanup_files($output_file, $options{weather_enabled}, $options{silent});
+} elsif ($options{silent} == 1 || $options{silent} == 2) {
+    INFO("Saved sound file to $output_file");
+    cleanup_files(undef, $options{weather_enabled}, $options{silent});
 }
-
-# Get the hour sound file
-my $hour_sound = get_sound_file($hour_str);
-if (!$hour_sound) {
-    ERROR("Could not find hour sound file for $hour_str");
-    exit 1;
-}
-
-# Get AM/PM sound if using 12-hour format
-my $ampm_sound = "";
-if ($options{twelve_hour}) {
-    $ampm_sound = get_sound_file($time->hour < 12 ? "a" : "p");
-    if (!$ampm_sound) {
-        ERROR("Could not find AM/PM sound file");
-        exit 1;
-    }
-}
-
-# Build the command
-my $cmd = "asterisk -rx 'dialplan exec saytime $hour_sound $minute_sound";
-$cmd .= " $ampm_sound" if $ampm_sound;
-$cmd .= " $node'";
-
-# Execute the command
-INFO("Executing command: $cmd");
-system($cmd);
-my $exit_code = $? >> 8;
-
-if ($exit_code != 0) {
-    ERROR("Command failed with exit code $exit_code");
-    exit $exit_code;
-}
-
-INFO("Time announcement completed successfully");
-exit 0;
 
 # Subroutines
 sub setup_logging {
@@ -201,6 +152,41 @@ sub validate_options {
         die "Custom sound directory does not exist: $options{custom_sound_dir}\n" 
             unless -d $options{custom_sound_dir};
     }
+    
+    # Validate required sound files
+    my $sound_dir = $options{custom_sound_dir} || BASE_SOUND_DIR;
+    my @required_files = (
+        "$sound_dir/rpt/thetimeis.ulaw",
+        "$sound_dir/digits/0.ulaw",
+        "$sound_dir/digits/1.ulaw",
+        "$sound_dir/digits/2.ulaw",
+        "$sound_dir/digits/3.ulaw",
+        "$sound_dir/digits/4.ulaw",
+        "$sound_dir/digits/5.ulaw",
+        "$sound_dir/digits/6.ulaw",
+        "$sound_dir/digits/7.ulaw",
+        "$sound_dir/digits/8.ulaw",
+        "$sound_dir/digits/9.ulaw",
+        "$sound_dir/digits/a-m.ulaw",
+        "$sound_dir/digits/p-m.ulaw",
+        "$sound_dir/rpt/goodmorning.ulaw",
+        "$sound_dir/rpt/goodafternoon.ulaw",
+        "$sound_dir/rpt/goodevening.ulaw"
+    );
+    
+    foreach my $file (@required_files) {
+        die "Required sound file not found: $file\n" unless -f $file;
+    }
+    
+    # Validate weather script if weather is enabled
+    if ($options{weather_enabled}) {
+        die "Weather script not found: " . WEATHER_SCRIPT . "\n" unless -f WEATHER_SCRIPT;
+        die "Weather script is not executable: " . WEATHER_SCRIPT . "\n" unless -x WEATHER_SCRIPT;
+    }
+    
+    # Validate temporary directory
+    die "Temporary directory does not exist: " . TMP_DIR . "\n" unless -d TMP_DIR;
+    die "Temporary directory is not writable: " . TMP_DIR . "\n" unless -w TMP_DIR;
 }
 
 sub get_current_time {
@@ -308,14 +294,28 @@ sub combine_sound_files {
 
 sub create_output_file {
     my ($input_files, $output_file) = @_;
+    
+    # Escape special characters in file paths
+    $input_files =~ s/([;&|`\$])/\\$1/g;
+    $output_file =~ s/([;&|`\$])/\\$1/g;
+    
     my $cat_result = system("cat $input_files > $output_file");
     if ($cat_result != 0) {
         ERROR("cat command failed with exit code: $cat_result");
+        die "Failed to create output file: $output_file\n";
     }
+    
+    # Ensure proper permissions
+    chmod 0644, $output_file or WARN("Failed to set permissions on $output_file: $!");
 }
 
 sub play_announcement {
     my ($file, $node) = @_;
+    
+    # Escape special characters
+    $file =~ s/([;&|`\$])/\\$1/g;
+    $node =~ s/([;&|`\$])/\\$1/g;
+    
     my $asterisk_file = File::Spec->catfile(TMP_DIR, "current-time");
     my $asterisk_cmd = sprintf(
         "/usr/sbin/asterisk -rx \"rpt localplay %s %s\"", $node, $asterisk_file
@@ -326,22 +326,46 @@ sub play_announcement {
         return;
     }
     
+    # Check if Asterisk is running
+    my $asterisk_running = system("pgrep -x asterisk >/dev/null 2>&1");
+    if ($asterisk_running != 0) {
+        ERROR("Asterisk is not running");
+        die "Cannot play announcement: Asterisk is not running\n";
+    }
+    
     my $asterisk_result = system($asterisk_cmd);
     if ($asterisk_result != 0) {
         ERROR("Asterisk command failed with exit code: $asterisk_result");
+        die "Failed to play announcement\n";
     }
     sleep 5;
 }
 
 sub cleanup_files {
     my ($file_to_delete, $weather_enabled, $silent) = @_;
+    
     if (defined $file_to_delete && $silent == 0) {
-        unlink $file_to_delete if -e $file_to_delete;
+        eval {
+            unlink $file_to_delete if -e $file_to_delete;
+        };
+        if ($@) {
+            WARN("Failed to delete $file_to_delete: $@");
+        }
     }
+    
     if ($weather_enabled && ($silent == 1 || $silent == 2 || $silent == 0)) {
-        unlink File::Spec->catfile(TMP_DIR, "temperature")
-            if -e File::Spec->catfile(TMP_DIR, "temperature");
-        unlink File::Spec->catfile(TMP_DIR, "condition.ulaw")
-            if -e File::Spec->catfile(TMP_DIR, "condition.ulaw");
+        my @files_to_clean = (
+            File::Spec->catfile(TMP_DIR, "temperature"),
+            File::Spec->catfile(TMP_DIR, "condition.ulaw")
+        );
+        
+        foreach my $file (@files_to_clean) {
+            eval {
+                unlink $file if -e $file;
+            };
+            if ($@) {
+                WARN("Failed to delete $file: $@");
+            }
+        }
     }
 }
