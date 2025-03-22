@@ -1,3 +1,13 @@
+saytime-weather (1.1.5) unstable; urgency=medium
+
+  * Fixed undefined variable errors in saytime.pl
+  * Simplified time handling code
+  * Removed legacy argument handling
+  * Streamlined sound file handling
+  * Improved code organization and readability
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:30:00 -0500
+
 saytime-weather (1.1.4) unstable; urgency=medium
 
   * Fixed regex syntax error in saytime.pl
