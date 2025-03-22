@@ -93,33 +93,82 @@ setup_logging();
 # Validate options
 validate_options();
 
-# Get current time in specified timezone
-my $now = get_current_time();
+# Get current time
+my $now = Time::Piece->new;
+my $hour = $now->hour;
+my $minute = $now->minute;
 
-# Process time and weather
-my $time_sound_files = process_time($now, $options{use_24hour});
-my $weather_sound_files = process_weather($options{location_id});
-
-# Combine and play
-my $output_file = File::Spec->catfile(TMP_DIR, "current-time.ulaw");
-my $final_sound_files = combine_sound_files($time_sound_files, $weather_sound_files);
-
-if ($options{dry_run}) {
-    INFO("Dry run mode - would play: $final_sound_files");
-    exit 0;
+# If hour and minute are provided, use them instead
+if (defined $hour_arg) {
+    $hour = $hour_arg;
+}
+if (defined $minute_arg) {
+    $minute = $minute_arg;
 }
 
-if ($final_sound_files) {
-    create_output_file($final_sound_files, $output_file);
+# Create time string for logging
+my $time_str = sprintf("%02d:%02d", $hour, $minute);
+
+# Log the announcement
+INFO("Announcing time: $time_str");
+
+# Get the current time in the specified timezone
+my $time = Time::Piece->new;
+if ($options{timezone}) {
+    $time = $time->localtime($options{timezone});
 }
 
-if ($options{silent} == 0) {
-    play_announcement($output_file, $options{node_number});
-    cleanup_files($output_file, $options{weather_enabled}, $options{silent});
-} elsif ($options{silent} == 1 || $options{silent} == 2) {
-    INFO("Saved sound file to $output_file");
-    cleanup_files(undef, $options{weather_enabled}, $options{silent});
+# Format the time based on 12/24 hour setting
+my $hour_str;
+if ($options{twelve_hour}) {
+    my $hour_12 = $time->hour % 12;
+    $hour_12 = 12 if $hour_12 == 0;
+    $hour_str = sprintf("%d", $hour_12);
+} else {
+    $hour_str = sprintf("%02d", $time->hour);
 }
+
+# Get the minute sound file
+my $minute_sound = get_sound_file("$minute");
+if (!$minute_sound) {
+    ERROR("Could not find minute sound file for $minute");
+    exit 1;
+}
+
+# Get the hour sound file
+my $hour_sound = get_sound_file($hour_str);
+if (!$hour_sound) {
+    ERROR("Could not find hour sound file for $hour_str");
+    exit 1;
+}
+
+# Get AM/PM sound if using 12-hour format
+my $ampm_sound = "";
+if ($options{twelve_hour}) {
+    $ampm_sound = get_sound_file($time->hour < 12 ? "a" : "p");
+    if (!$ampm_sound) {
+        ERROR("Could not find AM/PM sound file");
+        exit 1;
+    }
+}
+
+# Build the command
+my $cmd = "asterisk -rx 'dialplan exec saytime $hour_sound $minute_sound";
+$cmd .= " $ampm_sound" if $ampm_sound;
+$cmd .= " $node'";
+
+# Execute the command
+INFO("Executing command: $cmd");
+system($cmd);
+my $exit_code = $? >> 8;
+
+if ($exit_code != 0) {
+    ERROR("Command failed with exit code $exit_code");
+    exit $exit_code;
+}
+
+INFO("Time announcement completed successfully");
+exit 0;
 
 # Subroutines
 sub setup_logging {

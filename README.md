@@ -26,18 +26,32 @@ A collection of Perl scripts for announcing time and weather conditions over All
 The easiest way to install is using the Debian package:
 
 ```bash
-# Add the repository
-echo "deb http://w5gle.ddns.net/~anarchy/debian/ ./" | sudo tee /etc/apt/sources.list.d/saytime-weather.list
-
-# Update package list
-sudo apt update
+# Download the package
+wget http://w5gle.ddns.net/~anarchy/debian/saytime-weather/saytime-weather_1.1.2_all.deb
 
 # Install the package
-sudo apt install saytime-weather
+sudo dpkg -i saytime-weather_1.1.2_all.deb
+sudo apt-get install -f  # Install any missing dependencies
 ```
 
 You can also download the package directly from:
 http://w5gle.ddns.net/~anarchy/debian/saytime-weather/
+
+### Building the Debian Package
+
+To build the Debian package from source:
+
+1. Install build dependencies:
+```bash
+sudo apt install devscripts debhelper
+```
+
+2. Build the package:
+```bash
+dpkg-buildpackage -us -uc
+```
+
+The package will be created in the parent directory as `saytime-weather_1.1.2_all.deb`
 
 ### Manual Installation
 
