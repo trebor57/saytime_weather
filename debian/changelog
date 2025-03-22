@@ -1,3 +1,11 @@
+saytime-weather (1.1.6) unstable; urgency=medium
+
+  * Fixed sound file handling for double-digit minutes
+  * Improved sound file validation for tens and ones
+  * Added proper handling of zero in double-digit numbers
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:35:00 -0500
+
 saytime-weather (1.1.5) unstable; urgency=medium
 
   * Fixed undefined variable errors in saytime.pl

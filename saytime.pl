@@ -233,6 +233,21 @@ sub validate_options {
 sub get_sound_file {
     my ($num) = @_;
     my $sound_dir = $options{custom_sound_dir} || BASE_SOUND_DIR;
-    return "$sound_dir/digits/$num.ulaw" if -f "$sound_dir/digits/$num.ulaw";
+    
+    # Handle single digits (0-9)
+    if ($num =~ /^\d$/) {
+        return "$sound_dir/digits/$num.ulaw" if -f "$sound_dir/digits/$num.ulaw";
+    }
+    
+    # Handle double digits (10-59)
+    if ($num =~ /^[1-5]\d$/) {
+        my $tens = int($num / 10) * 10;
+        my $ones = $num % 10;
+        if (-f "$sound_dir/digits/$tens.ulaw" && 
+            ($ones == 0 || -f "$sound_dir/digits/$ones.ulaw")) {
+            return "$sound_dir/digits/$tens.ulaw " . ($ones ? "$sound_dir/digits/$ones.ulaw" : "");
+        }
+    }
+    
     return undef;
 }
