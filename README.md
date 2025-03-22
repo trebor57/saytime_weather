@@ -168,5 +168,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Author
 
 Jory A. Pratt (W5GLE)
-- Email: jory@w5gle.org
+- Email: geekypenguin@gmail.com
 - Website: http://w5gle.ddns.net/

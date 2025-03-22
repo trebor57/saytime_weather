@@ -1,3 +1,14 @@
+saytime-weather (1.1.3) unstable; urgency=medium
+
+  * Fixed time parsing error in saytime.pl
+  * Updated installation instructions to use direct package download
+  * Improved error handling in time announcements
+  * Fixed repository URL in documentation
+  * Added proper timezone handling in saytime.pl
+  * Enhanced logging for time announcements
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 20 Mar 2024 12:00:00 -0500
+
 saytime-weather (1.1.2) unstable; urgency=medium
 
   * Fixed dependency package names:
@@ -14,12 +25,12 @@ saytime-weather (1.1.2) unstable; urgency=medium
 saytime-weather (1.1.1) unstable; urgency=medium
 
   * Added Weather Underground API support for international airport codes
-  * Added configuration option for Weather Underground API in weather.ini
-  * Improved error handling for international airport codes
-  * Added proper data format conversion between Weather Underground and NWS APIs
-  * Updated documentation for international airport code support
+  * Added configurable weather data source selection
+  * Improved error handling and logging
+  * Updated documentation with API setup instructions
+  * Added examples for different location ID types
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 20 Mar 2024 12:00:00 -0500
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 19 Mar 2024 12:00:00 -0500
 
 saytime-weather (1.1.0) unstable; urgency=medium
 
@@ -29,30 +40,29 @@ saytime-weather (1.1.0) unstable; urgency=medium
     - liblog-log4perl-perl for logging
     - libcache-filecache-perl for weather data caching
   * Enhanced error handling and logging in both scripts
-  * Added timezone support to saytime.pl
+  * Added timezone support in saytime.pl
   * Improved weather data caching in weather.pl
   * Added support for legacy command line arguments
   * Added dry-run and test modes
   * Added custom sound directory support
   * Added configuration file support for weather.pl
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 20 Mar 2024 12:00:00 -0400
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 18 Mar 2024 12:00:00 -0500
 
 saytime-weather (1.0.1) unstable; urgency=medium
 
-  * Fixed duplicate installation of sound files
-  * Added dependency checks for libwww-perl and libjson-perl
-  * Improved Debian packaging rules
-  * Added post-installation instructions for crontab setup
+  * Fixed sound file installation permissions
+  * Added error handling for missing sound files
+  * Updated documentation with troubleshooting steps
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 20 Mar 2024 12:00:00 -0400
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 17 Mar 2024 12:00:00 -0500
 
 saytime-weather (1.0.0) unstable; urgency=medium
 
   * Initial release
-  * Added saytime.pl and weather.pl scripts
-  * Added sound files for time and weather announcements
-  * Added Debian packaging files
-  * Added basic dependency checks
+  * Basic time and weather announcement functionality
+  * Support for ZIP codes and airport codes
+  * Simple caching mechanism
+  * Basic logging support
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 20 Mar 2024 10:00:00 -0400 
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 16 Mar 2024 12:00:00 -0500 
