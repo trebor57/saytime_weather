@@ -23,7 +23,7 @@ check-deps:
 	@echo "Dependencies check passed."
 
 # Install scripts
-install: check-deps $(SCRIPTS)
+install: check-deps
 	@echo "Installing scripts to $(INSTALL_DIR)..."
 	@for script in $(SCRIPTS); do \
 		install -m 755 $$script $(INSTALL_DIR)/; \
