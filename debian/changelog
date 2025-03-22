@@ -1,3 +1,11 @@
+saytime-weather (1.1.7) unstable; urgency=medium
+
+  * Fixed Asterisk command construction for sound file playback
+  * Improved command argument handling
+  * Fixed spacing in dialplan exec command
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:40:00 -0500
+
 saytime-weather (1.1.6) unstable; urgency=medium
 
   * Fixed sound file handling for double-digit minutes

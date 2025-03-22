@@ -145,9 +145,11 @@ if (!$options{use_24hour}) {
 }
 
 # Build the command
-my $cmd = "asterisk -rx 'dialplan exec saytime $hour_sound $minute_sound";
-$cmd .= " $ampm_sound" if $ampm_sound;
-$cmd .= " $options{node_number}'";
+my $cmd = "asterisk -rx 'dialplan exec saytime ";
+$cmd .= "$hour_sound ";
+$cmd .= "$minute_sound ";
+$cmd .= "$ampm_sound " if $ampm_sound;
+$cmd .= "$options{node_number}'";
 
 # Execute the command
 INFO("Executing command: $cmd");
