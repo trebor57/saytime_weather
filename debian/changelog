@@ -148,4 +148,15 @@ saytime-weather (1.1.12) unstable; urgency=medium
   * Improved error messages for missing sound files
   * Fixed sound file path construction for special announcements
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:05:00 -0500 
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:05:00 -0500
+
+saytime-weather (1.1.13) unstable; urgency=medium
+
+  * Updated Debian package installation rules for new sound file structure
+  * Added installation of greeting and "the time is" sound files
+  * Added installation of digit sound files (0-9, 10-50)
+  * Updated postinst script to handle new sound file locations
+  * Fixed sound file permissions and ownership
+  * Reorganized sound files into rpt, digits, and wx directories
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:10:00 -0500 
