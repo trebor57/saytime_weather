@@ -93,6 +93,15 @@ setup_logging();
 # Validate options
 validate_options();
 
+# Get command line arguments
+my ($zipcode, $node, $hour_arg, $minute_arg) = @ARGV;
+
+# Validate arguments
+if (!defined $zipcode || !defined $node) {
+    print "Usage: $0 <zipcode> <node> [hour] [minute]\n";
+    exit 1;
+}
+
 # Get current time
 my $now = Time::Piece->new;
 my $hour = $now->hour;
