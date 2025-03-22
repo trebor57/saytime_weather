@@ -1,16 +1,3 @@
-saytime-weather (1.1.6) unstable; urgency=medium
-
-  * Simplified saytime.pl script:
-    - Removed complex GetOptions handling
-    - Streamlined command line argument processing
-    - Simplified time announcement logic
-    - Improved error handling and logging
-    - Removed unused functions and code
-    - Fixed variable declaration issues
-    - Enhanced code readability and maintainability
-
- -- Jory A. Pratt <jory@w5gle.org>  Wed, 20 Mar 2024 12:00:00 -0500
-
 saytime-weather (1.1.5) unstable; urgency=medium
 
   * Simplified command line arguments in saytime.pl:
