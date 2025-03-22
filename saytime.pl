@@ -144,9 +144,36 @@ if (!$options{use_24hour}) {
     }
 }
 
+# Get the greeting sound file based on time of day
+my $greeting_sound = "";
+if ($options{greeting_enabled}) {
+    my $hour = $time->hour;
+    if ($hour >= 5 && $hour < 12) {
+        $greeting_sound = get_sound_file("goodmorning");
+    } elsif ($hour >= 12 && $hour < 17) {
+        $greeting_sound = get_sound_file("goodafternoon");
+    } else {
+        $greeting_sound = get_sound_file("goodevening");
+    }
+    if (!$greeting_sound) {
+        ERROR("Could not find greeting sound file");
+        exit 1;
+    }
+}
+
+# Get the "the time is" sound file
+my $thetimeis_sound = get_sound_file("thetimeis");
+if (!$thetimeis_sound) {
+    ERROR("Could not find 'the time is' sound file");
+    exit 1;
+}
+
 # Create the concatenated sound file
 my $output_file = File::Spec->catfile(TMP_DIR, "current-time");
-my $sound_files = "$hour_sound $minute_sound";
+my $sound_files = "";
+$sound_files .= "$greeting_sound " if $greeting_sound;
+$sound_files .= "$thetimeis_sound ";
+$sound_files .= "$hour_sound $minute_sound";
 $sound_files .= " $ampm_sound" if $ampm_sound;
 
 # Concatenate the sound files

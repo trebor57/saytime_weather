@@ -130,4 +130,13 @@ saytime-weather (1.1.10) unstable; urgency=medium
   * Updated command to use full path to asterisk binary
   * Fixed command quoting for proper shell execution
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:55:00 -0500 
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:55:00 -0500
+
+saytime-weather (1.1.11) unstable; urgency=medium
+
+  * Fixed sound file concatenation to include greeting and "the time is" announcement
+  * Added proper time-based greeting selection (good morning/afternoon/evening)
+  * Improved sound file validation for all required sound files
+  * Fixed order of sound file concatenation for proper announcement flow
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:00:00 -0500 
