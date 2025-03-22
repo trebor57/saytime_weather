@@ -139,4 +139,13 @@ saytime-weather (1.1.11) unstable; urgency=medium
   * Improved sound file validation for all required sound files
   * Fixed order of sound file concatenation for proper announcement flow
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:00:00 -0500 
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:00:00 -0500
+
+saytime-weather (1.1.12) unstable; urgency=medium
+
+  * Fixed get_sound_file function to handle non-numeric sound files
+  * Added proper handling of greeting and "the time is" sound files
+  * Improved error messages for missing sound files
+  * Fixed sound file path construction for special announcements
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:05:00 -0500 

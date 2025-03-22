@@ -275,6 +275,16 @@ sub get_sound_file {
     my ($num) = @_;
     my $sound_dir = $options{custom_sound_dir} || BASE_SOUND_DIR;
     
+    # Handle special sound files (greetings, "the time is", etc.)
+    if ($num =~ /^(goodmorning|goodafternoon|goodevening|thetimeis|a|p)$/) {
+        my $file = "$sound_dir/rpt/$num.ulaw";
+        if (-f $file && -r $file) {
+            return $file;
+        }
+        ERROR("Sound file not found or not readable: $file");
+        return undef;
+    }
+    
     # Handle single digits (0-9)
     if ($num =~ /^\d$/) {
         my $file = "$sound_dir/digits/$num.ulaw";
