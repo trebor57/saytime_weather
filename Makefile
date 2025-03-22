@@ -15,22 +15,15 @@ all: install
 # Check dependencies
 check-deps:
 	@echo "Checking dependencies..."
-	@if ! command -v plocate >/dev/null 2>&1; then \
-		echo "Error: plocate is not installed. Please install it first."; \
-		echo "You can install it with: sudo apt-get install plocate"; \
-		exit 1; \
-	fi
-	@if ! perl -e 'use LWP::UserAgent;' 2>/dev/null; then \
-		echo "Error: libwww-perl is not installed. Please install it first."; \
-		echo "You can install it with: sudo apt-get install libwww-perl"; \
-		exit 1; \
-	fi
-	@if ! perl -e 'use JSON;' 2>/dev/null; then \
-		echo "Error: libjson-perl is not installed. Please install it first."; \
-		echo "You can install it with: sudo apt-get install libjson-perl"; \
-		exit 1; \
-	fi
-	@echo "Dependencies check passed."
+	@which plocate >/dev/null 2>&1 || (echo "Error: plocate not found. Please install it with: sudo apt-get install plocate" && exit 1)
+	@perl -e 'use LWP::UserAgent;' 2>/dev/null || (echo "Error: LWP::UserAgent not found. Please install it with: sudo apt-get install libwww-perl" && exit 1)
+	@perl -e 'use JSON;' 2>/dev/null || (echo "Error: JSON not found. Please install it with: sudo apt-get install libjson-perl" && exit 1)
+	@perl -e 'use Time::Piece;' 2>/dev/null || (echo "Error: Time::Piece not found. Please install it with: sudo apt-get install libtime-piece-perl" && exit 1)
+	@perl -e 'use Time::Local;' 2>/dev/null || (echo "Error: Time::Local not found. Please install it with: sudo apt-get install libtime-local-perl" && exit 1)
+	@perl -e 'use Log::Log4perl;' 2>/dev/null || (echo "Error: Log::Log4perl not found. Please install it with: sudo apt-get install liblog-log4perl-perl" && exit 1)
+	@perl -e 'use Cache::Cache;' 2>/dev/null || (echo "Error: Cache::Cache not found. Please install it with: sudo apt-get install libcache-cache-perl" && exit 1)
+	@perl -e 'use URI::Escape;' 2>/dev/null || (echo "Error: URI::Escape not found. Please install it with: sudo apt-get install liburi-perl" && exit 1)
+	@echo "All dependencies are installed."
 
 # Install scripts
 install: check-deps

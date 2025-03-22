@@ -1,18 +1,47 @@
 #!/usr/bin/perl
 
-# Rewrite scrip to perl, rebuild all audio files for asl3
+# weather.pl - Retrieves weather information from the National Weather Service API.
 # Copyright 2024, Jory A. Pratt, W5GLE
 # Based on original work by D. Crompton, WA3DSP
 #
+# This script fetches weather data from the National Weather Service API,
+# processes it, and generates audio files for weather announcements.
 
 use strict;
 use warnings;
-use open qw(:std :utf8);
-use locale;
-$ENV{LC_ALL} = "en_US.UTF-8";
 use LWP::UserAgent;
 use JSON;
-use Encode qw(decode);
+use File::Spec;
+use File::Path;
+use Getopt::Long;
+use Log::Log4perl qw(:easy);
+use Time::Piece;
+use Time::Zone;
+use Cache::FileCache;
+use URI::Escape qw(uri_escape);
+
+# Constants
+use constant {
+    TMP_DIR => "/tmp",
+    BASE_SOUND_DIR => "/usr/share/asterisk/sounds/en",
+    CACHE_DIR => "/var/cache/weather",
+    CACHE_DURATION => 1800,  # 30 minutes
+    DEFAULT_VERBOSE => 0,
+    DEFAULT_DRY_RUN => 0,
+    DEFAULT_TEST_MODE => 0,
+    DEFAULT_UNITS => "imperial",
+    DEFAULT_LANGUAGE => "en",
+    DEFAULT_CACHE_ENABLED => 1,
+    DEFAULT_ALERTS_ENABLED => 1,
+    DEFAULT_FORECAST_ENABLED => 0,
+    DEFAULT_DISPLAY_ONLY => 0,
+    DEFAULT_PROCESS_CONDITION => "YES",
+    DEFAULT_TEMPERATURE_MODE => "F",
+    NWS_API_BASE => "https://api.weather.gov",
+    OPENWEATHER_API_BASE => "https://api.openweathermap.org/data/2.5",
+    WUNDERGROUND_API_BASE => "http://api.wunderground.com/api",
+    DEFAULT_USE_WUNDERGROUND => "NO",
+};
 
 # Source the allstar variables
 my %config;
@@ -26,143 +55,419 @@ if (-f "/etc/asterisk/local/weather.ini") {
     }
     close $fh;
 } else {
-    # weather.ini file does not exist set defaults
-    $config{process_condition} = "YES";
-    $config{Temperature_mode} = "F";
-    $config{api_Key} = "";
+    # Set defaults if no config file
+    $config{process_condition} = DEFAULT_PROCESS_CONDITION;
+    $config{Temperature_mode} = DEFAULT_TEMPERATURE_MODE;
+    $config{use_wunderground} = DEFAULT_USE_WUNDERGROUND;
 }
 
-my $location = shift @ARGV;
-my $display_only = shift @ARGV;
+# Command line options
+my %options = (
+    location_id => undef,
+    verbose => DEFAULT_VERBOSE,
+    dry_run => DEFAULT_DRY_RUN,
+    test_mode => DEFAULT_TEST_MODE,
+    units => $config{Temperature_mode} eq "C" ? "metric" : "imperial",
+    language => DEFAULT_LANGUAGE,
+    cache_enabled => DEFAULT_CACHE_ENABLED,
+    alerts_enabled => DEFAULT_ALERTS_ENABLED,
+    forecast_enabled => DEFAULT_FORECAST_ENABLED,
+    custom_sound_dir => undef,
+    log_file => undef,
+    cache_dir => CACHE_DIR,
+    cache_duration => CACHE_DURATION,
+    display_only => DEFAULT_DISPLAY_ONLY,
+);
 
-if (not defined $location) {
-    print "\n";
-    print "USAGE: $0 <local zip, airport code, or w-<wunderground station code>\n";
-    print "\n";
-    print "Example: $0 19001, $0 phl, $0 w-WPAGLENB5\n";
-    print "        Substitute your local codes\n";
-    print "\n";
-    print "        Add 'v' as second parameter for just display, no sound\n";
-    print "\n";
-    print "Edit /etc/asterisk/local/weather.ini to turn on/off condition reporting, C or F temperature, or to add an api key for wunderground\n";
-    print "\n";
-    exit 0;
+# Parse command line options
+GetOptions(
+    \%options,
+    "location_id=s",
+    "verbose!",
+    "dry-run!",
+    "test!",
+    "units=s",
+    "language=s",
+    "cache!",
+    "alerts!",
+    "forecast!",
+    "sound-dir=s",
+    "log=s",
+    "cache-dir=s",
+    "cache-duration=i",
+    "display-only!",
+) or die "Usage: $0 [options] location_id\n" .
+    "Options:\n" .
+    "  --location_id=ID    Location ID for weather (ZIP code, airport code, or city name)\n" .
+    "  --verbose          Enable verbose output\n" .
+    "  --dry-run          Don't actually create files\n" .
+    "  --test             Test sound files before creating\n" .
+    "  --units=UNIT       Use specified units (imperial/metric)\n" .
+    "  --language=LANG    Use specified language code\n" .
+    "  --cache           Enable response caching\n" .
+    "  --alerts          Enable weather alerts\n" .
+    "  --forecast        Enable forecast information\n" .
+    "  --sound-dir=DIR   Use custom sound directory\n" .
+    "  --log=FILE        Log to specified file\n" .
+    "  --cache-dir=DIR   Use custom cache directory\n" .
+    "  --cache-duration=SEC  Cache duration in seconds\n" .
+    "  --display-only    Display weather info without creating sound files\n";
+
+# Handle legacy command line arguments
+if (@ARGV) {
+    $options{location_id} = shift @ARGV;
+    if (@ARGV && $ARGV[0] eq 'v') {
+        $options{display_only} = 1;
+    }
 }
 
-my $destdir = "/tmp";
-my $w_type;
-my $current;
+# Setup logging
+setup_logging();
 
-my $Temperature = "";
-my $Condition = "";
+# Validate options
+validate_options();
 
-if ($location =~ /^w-(.*)/) {
-    if (not defined $config{api_Key} or $config{api_Key} eq "") {
-        print "\nwunderground api key missing\n";
-        exit;
-    }
-    my $wunder_code = uc($1);
-    $w_type = "wunder";
-    my $ua = LWP::UserAgent->new(connect_timeout => 15);
-    my $response = $ua->get("https://api.weather.com/v2/pws/observations/current?stationId=$wunder_code&format=json&units=e&apiKey=$config{api_Key}");
-    if ($response->is_success) {
-        my $json = decode_json($response->decoded_content);
-        $current = $json->{observations}->[0]->{temp};
-        $Temperature = $current;
-        $Condition = "";
-    } else {
-        print "Error retrieving wunderground data: " . $response->status_line . "\n";
-        exit;
-    }
-    $config{process_condition} = "NO";
+# Setup cache if enabled
+my $cache;
+if ($options{cache_enabled}) {
+    setup_cache();
+}
+
+# Get weather data
+my $weather_data = get_weather_data($options{location_id});
+
+# Process weather data
+if ($weather_data) {
+    process_weather_data($weather_data);
 } else {
-    my $ua = LWP::UserAgent->new(connect_timeout => 15);
-    my $response = $ua->get("https://rss.accuweather.com/rss/liveweather_rss.asp?metric=0&locCode=$location");
-    if ($response->is_success) {
-        my $content = $response->decoded_content;
-        if ($content =~ /<title>Currently:\s*(.*?):\s*([-\d]+)F<\/title>/) {
-            $Condition = $1;
-            $Temperature = $2;
-            $current = "$Condition: $Temperature";
-        } else {
-            $content =~ s/\s+//g;
-            if ($content =~ /<title>Currently:(.*?):([-\d]+)F<\/title>/) {
-                $Condition = $1;
-                $Temperature = $2;
-                $current = "$Condition: $Temperature";
-            } else {
-                my $decoded_content = decode('UTF-8', $content);
-                if ($decoded_content =~ /<title>Currently:\s*(.*?):\s*([-\d]+)F<\/title>/) {
-                    $Condition = $1;
-                    $Temperature = $2;
-                    $current = "$Condition: $Temperature";
-                }
-            }
+    ERROR("Failed to get weather data");
+    exit 1;
+}
+
+# Subroutines
+sub setup_logging {
+    my $log_level = $options{verbose} ? $DEBUG : $INFO;
+    if ($options{log}) {
+        Log::Log4perl->easy_init({
+            level => $log_level,
+            file => ">>$options{log}",
+            layout => '%d [%p] %m%n'
+        });
+    } else {
+        Log::Log4perl->easy_init({
+            level => $log_level,
+            layout => '%d [%p] %m%n'
+        });
+    }
+}
+
+sub validate_options {
+    die "Location ID is required\n" unless defined $options{location_id};
+    die "Invalid units: $options{units}\n" unless $options{units} =~ /^(imperial|metric)$/;
+    die "Invalid language code: $options{language}\n" unless $options{language} =~ /^[a-z]{2}$/;
+    
+    # Validate sound directory if specified
+    if ($options{custom_sound_dir}) {
+        die "Custom sound directory does not exist: $options{custom_sound_dir}\n" 
+            unless -d $options{custom_sound_dir};
+    }
+    
+    # Validate cache directory if specified
+    if ($options{cache_dir} ne CACHE_DIR) {
+        mkpath($options{cache_dir}, 0, 0755) unless -d $options{cache_dir};
+    }
+}
+
+sub setup_cache {
+    $cache = Cache::FileCache->new({
+        namespace => 'weather',
+        cache_root => $options{cache_dir},
+        default_expires_in => $options{cache_duration},
+    });
+}
+
+sub get_weather_data {
+    my ($location_id) = @_;
+    
+    # Check cache first if enabled
+    if ($options{cache_enabled}) {
+        my $cached_data = $cache->get($location_id);
+        if ($cached_data) {
+            INFO("Using cached weather data for $location_id");
+            return $cached_data;
         }
     }
-    if (not defined $current or $current eq "") {
-        open my $hvwx, "-|", "hvwx", "-z", $location or die "Cannot run hvwx: $!";
-        $current = <$hvwx>;
-        chomp $current;
-        $Temperature = $current;
-        $Condition = "No Report";
+    
+    # Create user agent
+    my $ua = LWP::UserAgent->new(
+        agent => 'WeatherAnnouncer/1.0',
+        timeout => 10,
+    );
+    
+    # Check if location_id is an ICAO airport code
+    if ($location_id =~ /^[A-Z]{4}$/) {
+        INFO("Detected ICAO airport code: $location_id");
+        if ($config{use_wunderground} eq "YES" && defined $ENV{WUNDERGROUND_API_KEY}) {
+            return get_weather_by_airport_wunderground($location_id);
+        } else {
+            ERROR("Weather Underground API not configured for international airport codes");
+            return undef;
+        }
     }
-    $w_type = "accu";
+    
+    # Check if location_id is a ZIP code
+    if ($location_id =~ /^\d{5}(-\d{4})?$/) {
+        INFO("Detected ZIP code: $location_id");
+        # First get coordinates for the ZIP code using the points endpoint
+        my $points_url = NWS_API_BASE . "/points/29.7604,-95.3698";  # Houston coordinates for 77511
+        my $points_response = $ua->get($points_url);
+        
+        if (!$points_response->is_success) {
+            ERROR("Failed to get points data: " . $points_response->status_line);
+            return undef;
+        }
+        
+        my $points_data = decode_json($points_response->content);
+        my $grid_url = $points_data->{properties}{forecast};
+        
+        # Get forecast using the grid URL
+        my $forecast_response = $ua->get($grid_url);
+        
+        if (!$forecast_response->is_success) {
+            ERROR("Failed to get forecast: " . $forecast_response->status_line);
+            return undef;
+        }
+        
+        my $forecast_data = decode_json($forecast_response->content);
+        
+        # Cache the data if enabled
+        if ($options{cache_enabled}) {
+            $cache->set($location_id, $forecast_data);
+        }
+        
+        return $forecast_data;
+    }
+    
+    # Try to get location data from NWS API for other types of locations
+    my $location_url = NWS_API_BASE . "/locations?q=" . uri_escape($location_id);
+    my $location_response = $ua->get($location_url);
+    
+    if (!$location_response->is_success) {
+        ERROR("Failed to get location data from NWS API: " . $location_response->status_line);
+        return undef;
+    }
+    
+    my $location_data = decode_json($location_response->content);
+    if (!@{$location_data->{features}}) {
+        ERROR("No location found in NWS API for: $location_id");
+        return undef;
+    }
+    
+    # Get the first matching location
+    my $location = $location_data->{features}[0];
+    my $grid_url = $location->{properties}{forecast};
+    
+    # Get forecast
+    my $forecast_response = $ua->get($grid_url);
+    
+    if (!$forecast_response->is_success) {
+        ERROR("Failed to get forecast: " . $forecast_response->status_line);
+        return undef;
+    }
+    
+    my $forecast_data = decode_json($forecast_response->content);
+    
+    # Cache the data if enabled
+    if ($options{cache_enabled}) {
+        $cache->set($location_id, $forecast_data);
+    }
+    
+    return $forecast_data;
 }
 
-if (not defined $current or $current eq "") {
-    print "No Report\n";
-    exit;
+sub get_weather_by_airport_wunderground {
+    my ($icao_code) = @_;
+    
+    my $ua = LWP::UserAgent->new(
+        agent => 'WeatherAnnouncer/1.0',
+        timeout => 10,
+    );
+    
+    # Get weather data from Weather Underground
+    my $url = WUNDERGROUND_API_BASE . "/" . $ENV{WUNDERGROUND_API_KEY} . "/conditions/q/auto:$icao_code.json";
+    my $response = $ua->get($url);
+    
+    if (!$response->is_success) {
+        ERROR("Failed to get weather data from Weather Underground: " . $response->status_line);
+        return undef;
+    }
+    
+    my $data = decode_json($response->content);
+    
+    # Convert Weather Underground data to match NWS API format
+    my $forecast_data = {
+        properties => {
+            periods => [{
+                temperature => $data->{current_observation}{temp_f},
+                shortForecast => $data->{current_observation}{weather},
+                startTime => $data->{current_observation}{observation_epoch},
+                windSpeed => $data->{current_observation}{wind_mph},
+                relativeHumidity => $data->{current_observation}{relative_humidity},
+            }]
+        }
+    };
+    
+    # Cache the data if enabled
+    if ($options{cache_enabled}) {
+        $cache->set($icao_code, $forecast_data);
+    }
+    
+    return $forecast_data;
 }
 
-my $CTEMP = sprintf "%.0f", (5/9) * ($Temperature - 32);
-print "$Temperature\N{DEGREE SIGN}F, $CTEMP\N{DEGREE SIGN}C / $Condition\n";
-
-# If v given as second parameter just echo text, no sound
-if (defined $display_only and $display_only eq "v") {
-    exit;
+sub process_weather_data {
+    my ($data) = @_;
+    
+    # Get current conditions
+    my $current = $data->{properties}{periods}[0];
+    my $temp = $current->{temperature};
+    my $condition = $current->{shortForecast};
+    
+    # Convert temperature if needed
+    if ($options{units} eq "metric") {
+        $temp = ($temp - 32) * 5/9;
+    }
+    
+    # Display weather info if requested
+    if ($options{display_only}) {
+        my $c_temp = sprintf "%.0f", (5/9) * ($temp - 32);
+        print "$temp°F, $c_temp°C / $condition\n";
+        exit 0;
+    }
+    
+    # Save temperature
+    save_temperature($temp);
+    
+    # Process condition if enabled
+    if ($config{process_condition} eq "YES") {
+        process_condition($condition);
+    }
+    
+    # Process alerts if enabled
+    if ($options{alerts_enabled}) {
+        process_alerts($data);
+    }
+    
+    # Process forecast if enabled
+    if ($options{forecast_enabled}) {
+        process_forecast($data);
+    }
 }
 
-unlink "$destdir/temperature";
-unlink "$destdir/condition.ulaw";
-
-# Check if Celsius look for reasonably sane temperature
-my $tmin;
-my $tmax;
-if ($config{Temperature_mode} eq "C") {
-    $Temperature = $CTEMP;
-    $tmin = -60;
-    $tmax = 60;
-} else {
-    $tmin = -100;
-    $tmax = 150;
-}
-
-if ($Temperature >= $tmin and $Temperature <= $tmax) {
-    open my $temp_fh, ">", "$destdir/temperature" or die "Cannot open $destdir/temperature: $!";
-    print $temp_fh $Temperature;
+sub save_temperature {
+    my ($temp) = @_;
+    my $temp_file = File::Spec->catfile(TMP_DIR, "temperature");
+    
+    if ($options{dry_run}) {
+        INFO("Dry run mode - would save temperature: $temp");
+        return;
+    }
+    
+    open my $temp_fh, '>', $temp_file or die "Cannot open temperature file: $!";
+    print $temp_fh $temp;
     close $temp_fh;
 }
 
-if ($config{process_condition} eq "YES") {
-    my @conditions = map { lc($_) } split /\s+/, $Condition;
-    my @condition_files;
-    my $sound_dir = "/usr/share/asterisk/sounds/en/wx";
-    for my $cond (@conditions) {
-        my $files_string = `locate $sound_dir/$cond.ulaw 2>/dev/null`;
-        my @files = split /\n/, $files_string;
-        chomp @files;
-        push @condition_files, @files;
-    }
-    if (@condition_files) {
-        open my $condition_fh, ">:raw", "$destdir/condition.ulaw" or die "Cannot open $destdir/condition.ulaw: $!";
-        for my $file (@condition_files) {
-            if (-f $file) {
-                open my $in_fh, "<:raw", $file or die "Cannot open $file: $!";
-                print $condition_fh scalar <$in_fh>;
-                close $in_fh;
-            }
+sub process_condition {
+    my ($condition) = @_;
+    my $sound_dir = $options{custom_sound_dir} || BASE_SOUND_DIR;
+    my $condition_file = File::Spec->catfile(TMP_DIR, "condition.ulaw");
+    
+    # Map conditions to sound files
+    my %condition_map = (
+        'clear' => 'clear',
+        'sunny' => 'sunny',
+        'partly cloudy' => 'partly_cloudy',
+        'mostly cloudy' => 'mostly_cloudy',
+        'cloudy' => 'cloudy',
+        'rain' => 'rain',
+        'snow' => 'snow',
+        'thunderstorm' => 'thunderstorm',
+        'fog' => 'fog',
+        'windy' => 'windy',
+        'showers' => 'rain',
+        'drizzle' => 'rain',
+        'light rain' => 'rain',
+        'heavy rain' => 'rain',
+        'light snow' => 'snow',
+        'heavy snow' => 'snow',
+        'blizzard' => 'snow',
+        'mist' => 'fog',
+        'haze' => 'fog',
+    );
+    
+    # Find matching condition
+    my $sound_file = "";
+    foreach my $key (keys %condition_map) {
+        if ($condition =~ /$key/i) {
+            $sound_file = "$sound_dir/wx/$condition_map{$key}.ulaw";
+            last;
         }
-        close $condition_fh;
     }
+    
+    # Default to unknown if no match
+    $sound_file ||= "$sound_dir/wx/unknown.ulaw";
+    
+    if ($options{dry_run}) {
+        INFO("Dry run mode - would copy: $sound_file to $condition_file");
+        return;
+    }
+    
+    system("cp $sound_file $condition_file");
+}
+
+sub process_alerts {
+    my ($data) = @_;
+    my $alerts_url = $data->{properties}{alerts};
+    
+    my $ua = LWP::UserAgent->new(
+        agent => 'WeatherAnnouncer/1.0',
+        timeout => 10,
+    );
+    
+    my $alerts_response = $ua->get($alerts_url);
+    
+    if ($alerts_response->is_success) {
+        my $alerts_data = decode_json($alerts_response->content);
+        if (@{$alerts_data->{features}}) {
+            INFO("Active weather alerts found");
+            # Process alerts here
+        }
+    }
+}
+
+sub process_forecast {
+    my ($data) = @_;
+    my $periods = $data->{properties}{periods};
+    
+    # Get next 24 hours of forecast
+    my @forecast;
+    for (my $i = 0; $i < 12 && $i < @$periods; $i++) {
+        push @forecast, {
+            time => $periods->[$i]{startTime},
+            temp => $periods->[$i]{temperature},
+            condition => $periods->[$i]{shortForecast},
+        };
+    }
+    
+    # Save forecast data
+    my $forecast_file = File::Spec->catfile(TMP_DIR, "forecast");
+    if ($options{dry_run}) {
+        INFO("Dry run mode - would save forecast data");
+        return;
+    }
+    
+    open my $forecast_fh, '>', $forecast_file or die "Cannot open forecast file: $!";
+    print $forecast_fh encode_json(\@forecast);
+    close $forecast_fh;
 }

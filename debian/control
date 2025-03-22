@@ -1,5 +1,5 @@
 Source: saytime-weather
-Section: utils
+Section: hamradio
 Priority: optional
 Maintainer: Jory A. Pratt <geekypenguin@gmail.com>
 Build-Depends: debhelper
@@ -7,16 +7,30 @@ Standards-Version: 4.5.1
 
 Package: saytime-weather
 Architecture: all
-Depends: ${misc:Depends}, perl, plocate, libwww-perl, libjson-perl
-Description: SayTime and Weather scripts for Asterisk
- This package provides Perl scripts for Asterisk to announce
- time and weather conditions using sound files.
+Depends: ${misc:Depends},
+         plocate,
+         libwww-perl,
+         libjson-perl,
+         libtime-piece-perl,
+         libtime-local-perl,
+         liblog-log4perl-perl,
+         libcache-cache-perl,
+         liburi-perl
+Description: Time and weather announcement system for AllStar
+ This package provides scripts for announcing time and weather conditions
+ over AllStar nodes. It includes:
  .
  The package includes:
   * saytime.pl - Script to announce current time
   * weather.pl - Script to announce weather conditions
   * Sound files for time and weather announcements
  .
- The package requires plocate for sound file management.
- Weather script requires libwww-perl and libjson-perl for
- weather data retrieval. 
+ Features:
+  * Automatic time announcements
+  * Current weather conditions
+  * Support for ZIP codes and airport codes
+  * Weather Underground API support for international airport codes
+  * Configurable weather data source selection
+  * Caching for improved performance
+  * Custom sound directory support
+  * Comprehensive logging 

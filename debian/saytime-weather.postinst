@@ -38,11 +38,23 @@ cat << EOF
    Example content:
    process_condition="YES"
    Temperature_mode="F"
-   api_Key="your_wunderground_api_key"  # Only needed for wunderground stations
+   use_wunderground="NO"  # Set to "YES" for international airport codes
 
-3. Testing Installation:
+3. Weather Underground API Setup (Optional):
+   If using international airport codes, you need to:
+   a. Get an API key from Weather Underground
+   b. Set the environment variable:
+      export WUNDERGROUND_API_KEY="your_api_key_here"
+   c. Set use_wunderground="YES" in weather.ini
+
+4. Testing Installation:
    Test time announcement: /usr/local/sbin/saytime.pl <zip> <node>
    Test weather report: /usr/local/sbin/weather.pl <zip/airport/station>
+   
+   Examples:
+   - US location: /usr/local/sbin/weather.pl 19001
+   - US airport: /usr/local/sbin/weather.pl KJFK
+   - International airport: /usr/local/sbin/weather.pl EGLL
 
 Note: Replace zip codes, node numbers, and API keys with your own values.
 =====================================
