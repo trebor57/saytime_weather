@@ -1,3 +1,13 @@
+saytime-weather (1.0.1) unstable; urgency=medium
+
+  * Fixed duplicate installation of a-m.ulaw and p-m.ulaw files
+  * Added proper dependency checks for libwww-perl and libjson-perl
+  * Improved Debian packaging rules and dependencies
+  * Added post-installation instructions for crontab setup
+  * Added proper cleanup in prerm script
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Sat, 22 Mar 2024 12:00:00 +0000
+
 saytime-weather (1.0.0) unstable; urgency=medium
 
   * Initial release
