@@ -9,8 +9,8 @@ Build-Depends: debhelper
 Package-List:
  saytime-weather deb utils optional arch=all
 Checksums-Sha1:
- afa788dcd2cab7f5b4ec43721153c640321d604d 422997 saytime-weather_1.0.0.tar.gz
+ 7af4a9c175f325e6b2bd7ac60de3985a3c2e4e13 1605468 saytime-weather_1.0.0.tar.gz
 Checksums-Sha256:
- 6a47000aa62b20fcb5644c07751469d16187b0d24146f2aaf03f969555ad37f6 422997 saytime-weather_1.0.0.tar.gz
+ 201dabb6c2ca5497fea3375b22671e818c9e7907369d1c4ca29606639553de8c 1605468 saytime-weather_1.0.0.tar.gz
 Files:
- 9417b2d661be8de1575913a5375e6bd0 422997 saytime-weather_1.0.0.tar.gz
+ bd17e719cb6b16d6560df3e50f3e897f 1605468 saytime-weather_1.0.0.tar.gz
