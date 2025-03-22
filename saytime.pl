@@ -94,11 +94,30 @@ setup_logging();
 validate_options();
 
 # Get command line arguments
-my ($zipcode, $node, $hour_arg, $minute_arg) = @ARGV;
+my ($zipcode, $node, $silent, $use_24hour) = @ARGV;
 
 # Validate arguments
 if (!defined $zipcode || !defined $node) {
-    print "Usage: $0 <zipcode> <node> [hour] [minute]\n";
+    print "Usage: $0 <zipcode> <node> [silent] [24hour]\n";
+    print "  zipcode: Required - ZIP code for location\n";
+    print "  node: Required - Node number for announcement\n";
+    print "  silent: Optional - Silent mode (0=voice, 1=save time+weather, 2=save weather only)\n";
+    print "  24hour: Optional - Use 24-hour clock (0=12-hour, 1=24-hour)\n";
+    exit 1;
+}
+
+# Set default values for optional arguments
+$silent = 0 unless defined $silent;
+$use_24hour = 0 unless defined $use_24hour;
+
+# Validate silent and 24hour values
+if ($silent < 0 || $silent > 2) {
+    print "Error: Invalid silent value. Must be 0, 1, or 2.\n";
+    exit 1;
+}
+
+if ($use_24hour != 0 && $use_24hour != 1) {
+    print "Error: Invalid 24hour value. Must be 0 or 1.\n";
     exit 1;
 }
 
@@ -106,14 +125,6 @@ if (!defined $zipcode || !defined $node) {
 my $now = Time::Piece->new;
 my $hour = $now->hour;
 my $minute = $now->minute;
-
-# If hour and minute are provided, use them instead
-if (defined $hour_arg) {
-    $hour = $hour_arg;
-}
-if (defined $minute_arg) {
-    $minute = $minute_arg;
-}
 
 # Create time string for logging
 my $time_str = sprintf("%02d:%02d", $hour, $minute);
@@ -129,7 +140,7 @@ if ($options{timezone}) {
 
 # Format the time based on 12/24 hour setting
 my $hour_str;
-if ($options{twelve_hour}) {
+if (!$use_24hour) {
     my $hour_12 = $time->hour % 12;
     $hour_12 = 12 if $hour_12 == 0;
     $hour_str = sprintf("%d", $hour_12);
@@ -153,7 +164,7 @@ if (!$hour_sound) {
 
 # Get AM/PM sound if using 12-hour format
 my $ampm_sound = "";
-if ($options{twelve_hour}) {
+if (!$use_24hour) {
     $ampm_sound = get_sound_file($time->hour < 12 ? "a" : "p");
     if (!$ampm_sound) {
         ERROR("Could not find AM/PM sound file");
