@@ -1,3 +1,13 @@
+saytime-weather (1.1.8) unstable; urgency=medium
+
+  * Fixed Asterisk command construction with proper quoting
+  * Improved sound file validation and error messages
+  * Added file readability checks
+  * Fixed node number format validation (must be 6 digits)
+  * Enhanced error reporting for missing or unreadable files
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:45:00 -0500
+
 saytime-weather (1.1.7) unstable; urgency=medium
 
   * Fixed Asterisk command construction for sound file playback

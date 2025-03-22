@@ -146,10 +146,10 @@ if (!$options{use_24hour}) {
 
 # Build the command
 my $cmd = "asterisk -rx 'dialplan exec saytime ";
-$cmd .= "$hour_sound ";
-$cmd .= "$minute_sound ";
-$cmd .= "$ampm_sound " if $ampm_sound;
-$cmd .= "$options{node_number}'";
+$cmd .= qq{"$hour_sound" };  # Use double quotes for file paths
+$cmd .= qq{"$minute_sound" };  # Use double quotes for file paths
+$cmd .= qq{"$ampm_sound" } if $ampm_sound;  # Use double quotes for file paths
+$cmd .= "$options{node_number}'";  # Node number doesn't need quotes
 
 # Execute the command
 INFO("Executing command: $cmd");
@@ -183,7 +183,7 @@ sub setup_logging {
 
 sub validate_options {
     die "Node number is required\n" unless defined $options{node_number};
-    die "Invalid node number format: $options{node_number}\n" unless $options{node_number} =~ /^\d+$/;
+    die "Invalid node number format: $options{node_number}\n" unless $options{node_number} =~ /^\d{6}$/;
     die "Invalid silent value: $options{silent}\n" if $options{silent} < 0 || $options{silent} > 2;
     
     # Validate timezone
@@ -194,6 +194,8 @@ sub validate_options {
     if ($options{custom_sound_dir}) {
         die "Custom sound directory does not exist: $options{custom_sound_dir}\n" 
             unless -d $options{custom_sound_dir};
+        die "Custom sound directory is not readable: $options{custom_sound_dir}\n"
+            unless -r $options{custom_sound_dir};
     }
     
     # Validate required sound files
@@ -219,6 +221,7 @@ sub validate_options {
     
     foreach my $file (@required_files) {
         die "Required sound file not found: $file\n" unless -f $file;
+        die "Required sound file is not readable: $file\n" unless -r $file;
     }
     
     # Validate weather script if weather is enabled
@@ -238,18 +241,30 @@ sub get_sound_file {
     
     # Handle single digits (0-9)
     if ($num =~ /^\d$/) {
-        return "$sound_dir/digits/$num.ulaw" if -f "$sound_dir/digits/$num.ulaw";
+        my $file = "$sound_dir/digits/$num.ulaw";
+        if (-f $file && -r $file) {
+            return $file;
+        }
+        ERROR("Sound file not found or not readable: $file");
+        return undef;
     }
     
     # Handle double digits (10-59)
     if ($num =~ /^[1-5]\d$/) {
         my $tens = int($num / 10) * 10;
         my $ones = $num % 10;
-        if (-f "$sound_dir/digits/$tens.ulaw" && 
-            ($ones == 0 || -f "$sound_dir/digits/$ones.ulaw")) {
-            return "$sound_dir/digits/$tens.ulaw " . ($ones ? "$sound_dir/digits/$ones.ulaw" : "");
+        my $tens_file = "$sound_dir/digits/$tens.ulaw";
+        my $ones_file = $ones ? "$sound_dir/digits/$ones.ulaw" : "";
+        
+        if (-f $tens_file && -r $tens_file) {
+            if ($ones == 0 || (-f $ones_file && -r $ones_file)) {
+                return $tens_file . ($ones ? " $ones_file" : "");
+            }
         }
+        ERROR("Sound file not found or not readable: $tens_file" . ($ones ? " or $ones_file" : ""));
+        return undef;
     }
     
+    ERROR("Invalid number format: $num");
     return undef;
 }
