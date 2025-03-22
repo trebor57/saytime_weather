@@ -160,7 +160,7 @@ if ($cat_result != 0) {
 chmod 0644, $output_file or WARN("Failed to set permissions on $output_file: $!");
 
 # Build and execute the Asterisk command
-my $cmd = "asterisk -rx 'localplay $output_file'";
+my $cmd = "/usr/sbin/asterisk -rx \"rpt localplay " . $options{node_number} . " " . $output_file . "\"";
 INFO("Executing command: $cmd");
 system($cmd);
 my $exit_code = $? >> 8;

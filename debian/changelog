@@ -122,4 +122,12 @@ saytime-weather (1.0.0) unstable; urgency=medium
   * Simple caching mechanism
   * Basic logging support
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 16 Mar 2024 12:00:00 -0500 
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 16 Mar 2024 12:00:00 -0500
+
+saytime-weather (1.1.10) unstable; urgency=medium
+
+  * Fixed Asterisk command to use correct rpt localplay format with node number
+  * Updated command to use full path to asterisk binary
+  * Fixed command quoting for proper shell execution
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:55:00 -0500 
