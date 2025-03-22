@@ -20,6 +20,16 @@ check-deps:
 		echo "You can install it with: sudo apt-get install plocate"; \
 		exit 1; \
 	fi
+	@if ! perl -e 'use LWP::UserAgent;' 2>/dev/null; then \
+		echo "Error: libwww-perl is not installed. Please install it first."; \
+		echo "You can install it with: sudo apt-get install libwww-perl"; \
+		exit 1; \
+	fi
+	@if ! perl -e 'use JSON;' 2>/dev/null; then \
+		echo "Error: libjson-perl is not installed. Please install it first."; \
+		echo "You can install it with: sudo apt-get install libjson-perl"; \
+		exit 1; \
+	fi
 	@echo "Dependencies check passed."
 
 # Install scripts
