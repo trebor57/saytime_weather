@@ -15,7 +15,8 @@ Depends: ${misc:Depends},
          libtime-local-perl,
          liblog-log4perl-perl,
          libcache-cache-perl,
-         liburi-perl
+         liburi-perl,
+         libencode-perl
 Description: Time and weather announcement system for AllStar
  This package provides scripts for announcing time and weather conditions
  over AllStar nodes. It includes:

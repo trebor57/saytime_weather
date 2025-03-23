@@ -21,8 +21,9 @@ check-deps:
 	@perl -e 'use Time::Piece;' 2>/dev/null || (echo "Error: Time::Piece not found. Please install it with: sudo apt-get install libtime-piece-perl" && exit 1)
 	@perl -e 'use Time::Local;' 2>/dev/null || (echo "Error: Time::Local not found. Please install it with: sudo apt-get install libtime-local-perl" && exit 1)
 	@perl -e 'use Log::Log4perl;' 2>/dev/null || (echo "Error: Log::Log4perl not found. Please install it with: sudo apt-get install liblog-log4perl-perl" && exit 1)
-	@perl -e 'use Cache::Cache;' 2>/dev/null || (echo "Error: Cache::Cache not found. Please install it with: sudo apt-get install libcache-cache-perl" && exit 1)
+	@perl -e 'use Cache::FileCache;' 2>/dev/null || (echo "Error: Cache::FileCache not found. Please install it with: sudo apt-get install libcache-cache-perl" && exit 1)
 	@perl -e 'use URI::Escape;' 2>/dev/null || (echo "Error: URI::Escape not found. Please install it with: sudo apt-get install liburi-perl" && exit 1)
+	@perl -e 'use Encode;' 2>/dev/null || (echo "Error: Encode not found. Please install it with: sudo apt-get install libencode-perl" && exit 1)
 	@echo "All dependencies are installed."
 
 # Install scripts

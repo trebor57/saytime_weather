@@ -181,16 +181,25 @@ sub process_time {
     
     if ($use_24hour) {
         $files .= format_number($hour, $sound_dir);
-        if ($minute < 10 && $minute > 0) {
-            $files .= "$sound_dir/digits/0.ulaw ";
-            $files .= format_number($minute, $sound_dir);
+        if ($minute == 0) {
+            $files .= "$sound_dir/digits/hundred.ulaw ";
+            $files .= "$sound_dir/hours.ulaw ";
         } else {
-            $files .= format_number($minute, $sound_dir) if $minute != 0;
+            if ($minute < 10) {
+                $files .= "$sound_dir/digits/0.ulaw ";
+            }
+            $files .= format_number($minute, $sound_dir);
+            $files .= "$sound_dir/hours.ulaw ";
         }
     } else {
         my $display_hour = ($hour == 0 || $hour == 12) ? 12 : ($hour > 12 ? $hour - 12 : $hour);
         $files .= "$sound_dir/digits/$display_hour.ulaw ";
-        $files .= format_number($minute, $sound_dir) if $minute != 0;
+        if ($minute != 0) {
+            if ($minute < 10) {
+                $files .= "$sound_dir/digits/0.ulaw ";
+            }
+            $files .= format_number($minute, $sound_dir);
+        }
         $files .= "$sound_dir/digits/" . ($hour < 12 ? "a-m" : "p-m") . ".ulaw ";
     }
     
