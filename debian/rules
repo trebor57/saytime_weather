@@ -39,5 +39,5 @@ override_dh_auto_install:
 	install -m 644 sounds/thunderstorms.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
 	install -m 644 sounds/weather.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
 	install -m 644 sounds/windy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	chown -R root:asterisk debian/saytime-weather/usr/local/sbin
+	chown root:asterisk debian/saytime-weather/usr/local/sbin/*.pl
 	chown -R root:root debian/saytime-weather/usr/share/asterisk/sounds
