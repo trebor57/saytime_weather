@@ -8,7 +8,6 @@ A collection of Perl scripts for announcing time and weather conditions over All
   - Automatic hourly time announcements
   - Support for 12-hour and 24-hour formats
   - Configurable announcement times via crontab
-  - Timezone support
 
 - **Weather Announcements**
   - Current weather conditions
@@ -16,8 +15,6 @@ A collection of Perl scripts for announcing time and weather conditions over All
   - Weather Underground API support for international airport codes
   - Configurable weather data source selection
   - Caching for improved performance
-  - Custom sound directory support
-  - Comprehensive logging
 
 ## Installation
 
@@ -27,10 +24,10 @@ The easiest way to install is using the Debian package:
 
 ```bash
 # Download the package
-wget http://w5gle.ddns.net/~anarchy/debian/saytime-weather/saytime-weather_1.1.2_all.deb
+wget http://w5gle.ddns.net/~anarchy/debian/saytime-weather/saytime-weather_2.0.0_all.deb
 
 # Install the package
-sudo dpkg -i saytime-weather_1.1.2_all.deb
+sudo dpkg -i saytime-weather_2.0.0_all.deb
 sudo apt-get install -f  # Install any missing dependencies
 ```
 
@@ -79,7 +76,7 @@ sudo make install-all
 
 To announce time:
 ```bash
-sudo ./saytime.pl <zipcode> <node> [hour] [minute]
+sudo ./saytime.pl <zipcode> <node> [silent] [24hour]
 ```
 
 Example:
@@ -97,6 +94,8 @@ Add the line (modify time/zip/node as needed):
 00 07-23 * * * (/usr/bin/nice -19 /usr/local/sbin/saytime.pl 77511 546054 > /dev/null)
 ```
 
+Add ```0 1``` after nodenumber if you want it to announce in 24hour format
+
 This will announce time hourly from 7AM to 11PM.
 
 ### Weather Announcements
@@ -109,7 +108,6 @@ sudo ./weather.pl <location_id> <node>
 Location ID can be:
 - ZIP code (e.g., 77511)
 - ICAO airport code (e.g., KIAH)
-- City name (e.g., "Houston, TX")
 
 Example:
 ```bash
