@@ -3,7 +3,7 @@
 	dh $@
 
 override_dh_usrlocal:
-	dh_usrlocal --exclude=/usr/local/sbin
+	# Skip dh_usrlocal entirely since we handle /usr/local/sbin manually
 
 override_dh_auto_install:
 	dh_auto_install
