@@ -2,6 +2,9 @@
 %:
 	dh $@
 
+override_dh_usrlocal:
+	dh_usrlocal --exclude=/usr/local/sbin
+
 override_dh_auto_install:
 	dh_auto_install
 	mkdir -p debian/saytime-weather/usr/local/sbin
