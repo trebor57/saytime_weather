@@ -27,8 +27,7 @@ The easiest way to install is using the Debian package:
 wget http://w5gle.ddns.net/~anarchy/debian/saytime-weather/saytime-weather_2.0.0_all.deb
 
 # Install the package
-sudo dpkg -i saytime-weather_2.0.0_all.deb
-sudo apt-get install -f  # Install any missing dependencies
+sudo apt install ./saytime-weather
 ```
 
 You can also download the package directly from:
@@ -39,12 +38,12 @@ http://w5gle.ddns.net/~anarchy/debian/saytime-weather/
 To build the Debian package from source:
 
 1. Install build dependencies:
-```bash
+```
 sudo apt install devscripts debhelper
 ```
 
 2. Build the package:
-```bash
+```
 dpkg-buildpackage -us -uc
 ```
 
@@ -61,12 +60,12 @@ cd saytime-weather
 ```
 
 2. Install dependencies:
-```bash
+```
 sudo apt install plocate libwww-perl libjson-perl libtime-piece-perl libtime-local-perl liblog-log4perl-perl libcache-cache-perl liburi-perl
 ```
 
 3. Run the installation:
-```bash
+```
 sudo make install-all
 ```
 
@@ -75,17 +74,17 @@ sudo make install-all
 ### Time Announcements
 
 To announce time:
-```bash
+```
 sudo ./saytime.pl <zipcode> <node> [silent] [24hour]
 ```
 
 Example:
-```bash
+```
 sudo ./saytime.pl 77511 546054 0 1
 ```
 
 To setup automatic time announcements, add the following to root's crontab:
-```bash
+```
 sudo crontab -e
 ```
 
@@ -101,7 +100,7 @@ This will announce time hourly from 7AM to 11PM.
 ### Weather Announcements
 
 To announce weather:
-```bash
+```
 sudo ./weather.pl <location_id> <node>
 ```
 
@@ -120,12 +119,12 @@ For international airport codes, you'll need to set up the Weather Underground A
 
 1. Get an API key from [Weather Underground](https://www.wunderground.com/weather/api)
 2. Set the environment variable:
-```bash
+```
 export WUNDERGROUND_API_KEY="your_api_key_here"
 ```
 
 3. Enable Weather Underground in the configuration:
-```bash
+```
 echo 'use_wunderground="YES"' > /etc/weather.ini
 ```
 
