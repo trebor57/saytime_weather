@@ -27,7 +27,7 @@ The easiest way to install is using the Debian package:
 wget http://w5gle.ddns.net/~anarchy/debian/saytime-weather/saytime-weather_2.0.0_all.deb
 
 # Install the package
-sudo apt install ./saytime-weather
+sudo apt install ./saytime-weather_2.0.0_all.deb
 ```
 
 You can also download the package directly from:
