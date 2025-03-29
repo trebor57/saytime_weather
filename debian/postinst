@@ -1,0 +1,45 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        # Create required directories if they don't exist
+        mkdir -p /var/cache/weather
+        mkdir -p /etc/asterisk/local
+
+        # Set correct ownership
+        chown -R asterisk:asterisk /var/cache/weather
+        chown -R asterisk:asterisk /usr/share/asterisk/sounds/en/wx
+        chown asterisk:asterisk /usr/local/sbin/saytime.pl
+        chown asterisk:asterisk /usr/local/sbin/weather.pl
+
+        # Set correct permissions
+        chmod 755 /usr/local/sbin/saytime.pl
+        chmod 755 /usr/local/sbin/weather.pl
+        chmod 644 /usr/share/asterisk/sounds/en/wx/*
+        chmod 755 /var/cache/weather
+
+        # Create default config if it doesn't exist
+        if [ ! -f /etc/asterisk/local/weather.ini ]; then
+            cat > /etc/asterisk/local/weather.ini <<EOF
+use_accuweather="YES"
+use_hvwx="YES"
+cache_enabled="YES"
+cache_duration="1800"
+process_condition="YES"
+EOF
+            chown asterisk:asterisk /etc/asterisk/local/weather.ini
+            chmod 644 /etc/asterisk/local/weather.ini
+        fi
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0 
