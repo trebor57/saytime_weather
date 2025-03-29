@@ -15,17 +15,37 @@ use JSON;
 use Encode qw(decode);
 use Cache::FileCache;
 
-# Source the allstar variables
+# Define paths at the top of the script
+my @CONFIG_PATHS = (
+    "/etc/asterisk/local/weather.ini",
+    "/etc/asterisk/weather.ini",
+    "/usr/local/etc/weather.ini"
+);
+
+my @CACHE_PATHS = (
+    "/var/cache/weather",
+    "/tmp/weather-cache"
+);
+
+my @TEMP_PATHS = (
+    "/tmp/temperature",
+    "/tmp/condition.ulaw"
+);
+
+# Source the allstar variables - try each config path
 my %config;
-if (-f "/etc/asterisk/local/weather.ini") {
-    open my $fh, "<", "/etc/asterisk/local/weather.ini" or die "Cannot open /etc/asterisk/local/weather.ini: $!";
-    while (my $line = <$fh>) {
-        chomp $line;
-        if ($line =~ /^\s*([^=]+)="([^"]*)"/) {
-            $config{$1} = $2;
+foreach my $config_file (@CONFIG_PATHS) {
+    if (-f $config_file) {
+        open my $fh, "<", $config_file or next;
+        while (my $line = <$fh>) {
+            chomp $line;
+            if ($line =~ /^\s*([^=]+)="([^"]*)"/) {
+                $config{$1} = $2;
+            }
         }
+        close $fh;
+        last;  # Stop after first successful config file
     }
-    close $fh;
 }
 
 # Set default values for all configuration options
@@ -40,12 +60,17 @@ $config{cache_duration} = "1800" unless defined $config{cache_duration};  # 30 m
 # Initialize cache if enabled
 my $cache;
 if ($config{cache_enabled} eq "YES") {
-    $cache = Cache::FileCache->new({
-        cache_root => '/var/cache/weather',
-        default_expires_in => $config{cache_duration},
-        auto_purge_interval => 3600,  # 1 hour
-        auto_purge_on_set => 1,
-    });
+    foreach my $cache_path (@CACHE_PATHS) {
+        if (-d $cache_path || mkdir $cache_path) {
+            $cache = Cache::FileCache->new({
+                cache_root => $cache_path,
+                default_expires_in => $config{cache_duration},
+                auto_purge_interval => 3600,  # 1 hour
+                auto_purge_on_set => 1,
+            });
+            last if defined $cache;
+        }
+    }
 }
 
 my $location = shift @ARGV;
@@ -216,9 +241,14 @@ if ($config{Temperature_mode} eq "C") {
 
 # Write temperature file if within valid range
 if ($Temperature >= $tmin and $Temperature <= $tmax) {
-    open my $temp_fh, ">", "$destdir/temperature" or die "Cannot open $destdir/temperature: $!";
-    print $temp_fh $Temperature;
-    close $temp_fh;
+    foreach my $temp_file (@TEMP_PATHS[0]) {  # Only use first path for temperature
+        eval {
+            open my $temp_fh, '>', $temp_file or die "Cannot open temperature file: $!";
+            print $temp_fh $Temperature;
+            close $temp_fh;
+            last;
+        };
+    }
 }
 
 # Process weather condition if enabled

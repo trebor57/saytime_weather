@@ -3,9 +3,9 @@ saytime-weather (2.0.1) unstable; urgency=medium
   * Fixed location ID option handling to prevent conflict with log option
   * Removed redundant debug code
   * Optimized GetOptions configuration
-  * Added proper error handling for weather script execution
+  * Added proper error handling for weather script
   * Updated help text for clarity
-  * Fixed installation paths for Debian policy compliance
+  * Fixed installation paths
   * Improved sound file permissions handling
 
  -- Jory A. Pratt <geekypenguin@gmail.com>  $(date -R)
