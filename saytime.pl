@@ -60,20 +60,7 @@ GetOptions(
     "greeting|g!",
     "sound-dir=s",
     "log=s",
-) or die "Usage: $0 [options] [location_id] node_number\n" .
-    "Options:\n" .
-    "  -l, --location_id=ID    Location ID for weather\n" .
-    "  -n, --node_number=NUM   Node number for announcement\n" .
-    "  -s, --silent=NUM        Silent mode (0=voice, 1=save time+weather, 2=save weather only)\n" .
-    "  -h, --use_24hour        Use 24-hour clock\n" .    
-    "  -z, --timezone=TZ       Use specified timezone\n" .
-    "  -v, --verbose           Enable verbose output\n" .
-    "  -d, --dry-run           Don't actually play or save files\n" .
-    "  -t, --test              Test sound files before playing\n" .
-    "  -w, --weather           Enable weather announcements\n" .
-    "  -g, --greeting          Enable greeting messages\n" .
-    "      --sound-dir=DIR     Use custom sound directory\n" .
-    "      --log=FILE          Log to specified file\n";
+) or show_usage();
 
 # Setup logging
 setup_logging();
@@ -127,9 +114,28 @@ sub setup_logging {
 }
 
 sub validate_options {
+    # Show usage if no node number provided via options or arguments
+    show_usage() unless defined $options{node_number} || @ARGV;
+    
+    # If node number was provided as argument, use it
+    $options{node_number} = shift @ARGV if @ARGV && !defined $options{node_number};
+    
+    # Now validate all options
     die "Node number is required\n" unless defined $options{node_number};
     die "Invalid node number format: $options{node_number}\n" unless $options{node_number} =~ /^\d+$/;
     die "Invalid silent value: $options{silent}\n" if $options{silent} < 0 || $options{silent} > 2;
+    
+    # Validate location ID if weather is enabled
+    if ($options{weather_enabled} && !defined $options{location_id}) {
+        die "Location ID is required when weather is enabled\n";
+    }
+    
+    if (defined $options{location_id} && 
+        $options{location_id} !~ /^\d{5}$/ &&      # 5-digit code
+        $options{location_id} !~ /^[A-Z]{3,4}$/    # 3-4 letter airport code
+    ) {
+        die "Invalid location ID format: $options{location_id} (must be 5 digits or 3-4 letter airport code)\n";
+    }
     
     # Validate timezone
     eval { tz_offset($options{timezone}) };
@@ -273,7 +279,7 @@ sub play_announcement {
     my ($file, $node) = @_;
     my $asterisk_file = File::Spec->catfile(TMP_DIR, "current-time");
     my $asterisk_cmd = sprintf(
-        "/usr/bin/asterisk -rx \"rpt localplay %s %s\"",
+        "/usr/sbin/asterisk -rx \"rpt localplay %s %s\"",
         $node, $asterisk_file
     );
     
@@ -300,4 +306,26 @@ sub cleanup_files {
         unlink File::Spec->catfile(TMP_DIR, "condition.ulaw")
             if -e File::Spec->catfile(TMP_DIR, "condition.ulaw");
     }
+}
+
+sub show_usage {
+    die "Usage: $0 [options] [location_id] node_number\n" .
+    "Options:\n" .
+    "  -l, --location_id=ID    Location ID for weather (default: none)\n" .
+    "  -n, --node_number=NUM   Node number for announcement (required)\n" .
+    "  -s, --silent=NUM        Silent mode (default: 0)\n" .
+    "                          0=voice, 1=save time+weather, 2=save weather only\n" .
+    "  -h, --use_24hour        Use 24-hour clock (default: off)\n" .    
+    "  -z, --timezone=TZ       Use specified timezone (default: UTC)\n" .
+    "  -v, --verbose           Enable verbose output (default: off)\n" .
+    "  -d, --dry-run           Don't actually play or save files (default: off)\n" .
+    "  -t, --test              Test sound files before playing (default: off)\n" .
+    "  -w, --weather           Enable weather announcements (default: on)\n" .
+    "  -g, --greeting          Enable greeting messages (default: on)\n" .
+    "      --sound-dir=DIR     Use custom sound directory\n" .
+    "                          (default: /usr/share/asterisk/sounds/en)\n" .
+    "      --log=FILE          Log to specified file (default: none)\n\n" .
+    "Location ID can be either:\n" .
+    "  - 5-digit location code (e.g., 77511)\n" .
+    "  - 3-4 letter airport code (e.g., KHOU)\n";
 }
