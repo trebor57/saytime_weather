@@ -11,7 +11,6 @@
 use strict;
 use warnings;
 use Time::Piece;
-use Time::Zone;
 use File::Spec;
 use Getopt::Long;
 use Log::Log4perl qw(:easy);
@@ -35,7 +34,6 @@ my %options = (
     node_number => undef,
     silent => 0,
     use_24hour => DEFAULT_24HOUR,
-    timezone => "UTC",
     verbose => DEFAULT_VERBOSE,
     dry_run => DEFAULT_DRY_RUN,
     test_mode => DEFAULT_TEST_MODE,
@@ -52,7 +50,6 @@ GetOptions(
     "node_number|n=s",
     "silent|s=i",
     "use_24hour|h!",
-    "timezone|z=s",
     "verbose|v!",
     "dry-run|d!",
     "test|t!",
@@ -137,10 +134,6 @@ sub validate_options {
         die "Invalid location ID format: $options{location_id} (must be 5 digits or 3-4 letter airport code)\n";
     }
     
-    # Validate timezone
-    eval { tz_offset($options{timezone}) };
-    die "Invalid timezone: $options{timezone}\n" if $@;
-    
     # Validate sound directory if specified
     if ($options{custom_sound_dir}) {
         die "Custom sound directory does not exist: $options{custom_sound_dir}\n" 
@@ -149,13 +142,7 @@ sub validate_options {
 }
 
 sub get_current_time {
-    my $tz = $options{timezone};
-    my $now = localtime;
-    if ($tz ne "UTC") {
-        my $offset = tz_offset($tz);
-        $now += $offset;
-    }
-    return $now;
+    return localtime;
 }
 
 sub process_time {
@@ -316,7 +303,6 @@ sub show_usage {
     "  -s, --silent=NUM        Silent mode (default: 0)\n" .
     "                          0=voice, 1=save time+weather, 2=save weather only\n" .
     "  -h, --use_24hour        Use 24-hour clock (default: off)\n" .    
-    "  -z, --timezone=TZ       Use specified timezone (default: UTC)\n" .
     "  -v, --verbose           Enable verbose output (default: off)\n" .
     "  -d, --dry-run           Don't actually play or save files (default: off)\n" .
     "  -t, --test              Test sound files before playing (default: off)\n" .
