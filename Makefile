@@ -34,9 +34,9 @@ install: check-deps
 	@echo "=== Post Installation Instructions ==="
 	@echo "To setup automatic time announcements, add the following to root's crontab:"
 	@echo "Run: sudo crontab -e"
-	@echo "Add the line (modify time/zip/node as needed):"
-	@echo "00 07-23 * * * (/usr/bin/nice -19 /usr/local/sbin/saytime.pl 77511 546054 > /dev/null)"
-	@echo "This will announce time hourly from 7AM to 11PM"
+	@echo "Add the line (modify time/location/node as needed):"
+	@echo "00 07-23 * * * /usr/bin/nice -19 /usr/local/sbin/saytime.pl -l 77511 -n 546054 > /dev/null"
+	@echo "This will announce time and weather hourly from 7AM to 11PM"
 	@echo "=====================================\n"
 
 # Install sound files
