@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # saytime.pl - Announces the time and weather information.
-# Copyright 2024, Jory A. Pratt, W5GLE
+# Copyright 2025, Jory A. Pratt, W5GLE
 # Based on original work by D. Crompton, WA3DSP
 #
 # This script retrieves the current time and optionally the weather,

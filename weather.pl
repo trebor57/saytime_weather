@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # Rewrite scrip to perl, rebuild all audio files for asl3
-# Copyright 2024, Jory A. Pratt, W5GLE
+# Copyright 2025, Jory A. Pratt, W5GLE
 # Based on original work by D. Crompton, WA3DSP
 #
 
