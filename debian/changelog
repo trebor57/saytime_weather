@@ -1,17 +1,32 @@
-saytime-weather (2.0.1) unstable; urgency=medium
+saytime-weather (2.6.0) unstable; urgency=medium
 
-  * Fixed location ID option handling
-  * Updated sound file paths for Debian compatibility
-  * Updated asterisk binary path
-  * Removed redundant debug code
-  * Optimized GetOptions configuration
-  * Added proper error handling for weather script
-  * Updated help text for clarity
-  * Fixed installation paths
-  * Improved sound file permissions handling
-  * Fixed temperature file handling
-  * Removed libgetopt-long-perl dependency
-  * Fixed eval/last issue in weather.pl
+  * Updated installation paths for Debian compliance
+    - Scripts now install to /usr/local/sbin
+    - Sound files install to correct Asterisk paths
+  * Fixed script permissions and ownership
+    - Set scripts to asterisk:asterisk ownership
+    - Set sound files to asterisk:asterisk ownership
+  * Improved option handling
+    - Added support for airport codes in location ID
+    - Fixed location ID option conflicts
+    - Removed timezone support for simplicity
+    - Added better validation for all options
+  * Enhanced help text and documentation
+    - Added default values to help output
+    - Improved option descriptions
+    - Updated usage examples
+  * Optimized package dependencies
+    - Removed libgetopt-long-perl (part of perl core)
+    - Updated required Perl module list
+  * Fixed weather script issues
+    - Corrected scalar array reference warnings
+    - Improved temperature file handling
+    - Fixed eval/last issue in weather.pl
+  * Updated sound file organization
+    - Removed compound condition files
+    - Cleaned up unused sound files
+    - Fixed sound file naming convention
+  * Updated copyright year to 2025
 
  -- Jory A. Pratt <geekypenguin@gmail.com>  Thu, 28 Mar 2024 23:45:00 -0500
 
