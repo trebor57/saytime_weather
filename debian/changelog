@@ -1,50 +1,25 @@
 saytime-weather (2.0.1) unstable; urgency=medium
 
-  * Fixed location ID option handling to prevent conflict with log option
+  * Fixed location ID option handling
+  * Updated sound file paths for Debian compatibility
+  * Updated asterisk binary path
   * Removed redundant debug code
   * Optimized GetOptions configuration
   * Added proper error handling for weather script
   * Updated help text for clarity
   * Fixed installation paths
   * Improved sound file permissions handling
+  * Fixed temperature file handling
+  * Removed libgetopt-long-perl dependency
+  * Fixed eval/last issue in weather.pl
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  $(date -R)
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Thu, 28 Mar 2024 23:45:00 -0500
 
 saytime-weather (2.0.0) unstable; urgency=medium
 
-  * Major version bump to 2.0.0
-  * Improved caching system:
-    - Added Cache::FileCache for reliable caching
-    - Added configurable cache duration
-    - Added automatic cache purging
-    - Added cache validation and error handling
-  * Enhanced error handling and logging:
-    - Added comprehensive error messages
-    - Added detailed API response logging
-    - Added fallback mechanism logging
-    - Added cache operation logging
-  * Improved configuration system:
-    - Added weather.ini configuration file
-    - Added configurable weather data source selection
-    - Added configurable cache settings
-    - Added API key management
-  * Updated dependencies:
-    - Added libencode-perl for UTF-8 support
-    - Updated Cache::Cache to Cache::FileCache
-    - Added proper dependency validation
-    - Fixed package names in debian/control
-  * Enhanced sound file handling:
-    - Added support for custom sound directories
-    - Improved sound file validation
-    - Added proper file permissions
-    - Added sound file organization
-  * Improved documentation:
-    - Added detailed API setup instructions
-    - Added configuration file documentation
-    - Added troubleshooting guide
-    - Added examples for different location types
+  * Initial release.
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 01:20:00 -0500
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Thu, 28 Mar 2024 23:00:00 -0500
 
 saytime-weather (1.1.9) unstable; urgency=medium
 
