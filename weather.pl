@@ -241,13 +241,14 @@ if ($config{Temperature_mode} eq "C") {
 
 # Write temperature file if within valid range
 if ($Temperature >= $tmin and $Temperature <= $tmax) {
-    foreach my $temp_file ($TEMP_PATHS[0]) {
-        eval {
-            open my $temp_fh, '>', $temp_file or die "Cannot open temperature file: $!";
-            print $temp_fh $Temperature;
-            close $temp_fh;
-            last;
-        };
+    my $temp_file = $TEMP_PATHS[0];
+    eval {
+        open my $temp_fh, '>', $temp_file or die "Cannot open temperature file: $!";
+        print $temp_fh $Temperature;
+        close $temp_fh;
+    };
+    if ($@) {
+        warn "Error writing temperature file: $@\n";
     }
 }
 
