@@ -17,8 +17,7 @@ Depends: ${perl:Depends},
          libcache-cache-perl,
          liburi-perl,
          libencode-perl,
-         libfile-spec-perl,
-         libgetopt-long-perl
+         libfile-spec-perl
 Description: Time and weather announcement system for Asterisk
  Announces the current time and weather conditions through
  Asterisk. Supports 12/24 hour time formats, multiple
