@@ -14,33 +14,37 @@ override_dh_auto_install:
 	# Install time-related sound files
 	install -m 644 sounds/a-m.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/
 	install -m 644 sounds/p-m.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/
-	# Install weather-related sound files, excluding time-related ones
-	install -m 644 sounds/breezy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/calm.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/clear.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/cloudy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/conditions.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/degrees.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/drizzle.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/foggy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/gusty.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/hail.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/heavy_rain.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/heavy_snow.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/light_rain.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/light_snow.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/moderate_rain.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/moderate_snow.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/mostly_cloudy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/overcast.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/partly_cloudy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/rain.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/showers.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/sleet.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/sunny.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/temperature.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/thunderstorms.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/weather.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 sounds/windy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	chown root:asterisk debian/saytime-weather/usr/local/sbin/*.pl
-	chown -R root:root debian/saytime-weather/usr/share/asterisk/sounds
+
+	# Install weather-related sound files
+	cd sounds && install -m 644 \
+		breezy.ulaw \
+		calm.ulaw \
+		clear.ulaw \
+		cloudy.ulaw \
+		conditions.ulaw \
+		degrees.ulaw \
+		drizzle.ulaw \
+		foggy.ulaw \
+		gusty.ulaw \
+		hail.ulaw \
+		heavy.ulaw \
+		light.ulaw \
+		moderate.ulaw \
+		mostly.ulaw \
+		overcast.ulaw \
+		partly.ulaw \
+		rain.ulaw \
+		showers.ulaw \
+		sleet.ulaw \
+		sunny.ulaw \
+		temperature.ulaw \
+		thunderstorms.ulaw \
+		weather.ulaw \
+		windy.ulaw \
+		debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
+
+override_dh_fixperms:
+	dh_fixperms
+	# Set correct permissions and ownership
+	chown -R asterisk:asterisk debian/saytime-weather/usr/local/sbin/*.pl
+	chown -R asterisk:asterisk debian/saytime-weather/usr/share/asterisk/sounds/en
