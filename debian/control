@@ -2,36 +2,34 @@ Source: saytime-weather
 Section: hamradio
 Priority: optional
 Maintainer: Jory A. Pratt <geekypenguin@gmail.com>
-Build-Depends: debhelper
-Standards-Version: 4.5.1
+Build-Depends: debhelper-compat (= 13),
+               perl
+Standards-Version: 4.6.2
+Homepage: https://github.com/w5gle/saytime-weather
+Rules-Requires-Root: no
 
 Package: saytime-weather
 Architecture: all
-Depends: ${misc:Depends},
-         plocate,
-         libwww-perl,
-         libjson-perl,
+Depends: ${perl:Depends},
+         ${misc:Depends},
          libtime-piece-perl,
          libtime-local-perl,
          liblog-log4perl-perl,
          libcache-cache-perl,
          liburi-perl,
-         libencode-perl
-Description: Time and weather announcement system for AllStar
- This package provides scripts for announcing time and weather conditions
- over AllStar nodes. It includes:
+         libencode-perl,
+         libfile-spec-perl,
+         libgetopt-long-perl
+Description: Time and weather announcement system for Asterisk
+ Announces the current time and weather conditions through
+ Asterisk. Supports 12/24 hour time formats, multiple
+ timezones, and weather information from various sources.
+ Designed for use with radio systems and repeater controllers.
  .
- The package includes:
-  * saytime.pl - Script to announce current time
-  * weather.pl - Script to announce weather conditions
-  * Sound files for time and weather announcements
- .
- Features:
-  * Automatic time announcements
-  * Current weather conditions
-  * Support for ZIP codes and airport codes
-  * Weather Underground API support for international airport codes
-  * Configurable weather data source selection
-  * Caching for improved performance
-  * Custom sound directory support
-  * Comprehensive logging 
+ Features include:
+  * Time announcements in 12/24 hour format
+  * Weather conditions from multiple data sources
+  * Support for international airport codes
+  * Configurable caching system
+  * Comprehensive logging
+  * Custom sound directory support 

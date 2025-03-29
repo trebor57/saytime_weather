@@ -48,44 +48,32 @@ my %options = (
 # Parse command line options
 GetOptions(
     \%options,
-    "location_id=s",
-    "node_number=s",
-    "silent=i",
-    "24hour!",
-    "timezone=s",
-    "verbose!",
-    "dry-run!",
-    "test!",
-    "weather!",
-    "greeting!",
+    "location_id|l=s",
+    "node_number|n=s",
+    "silent|s=i",
+    "use_24hour|h!",
+    "timezone|z=s",
+    "verbose|v!",
+    "dry-run|d!",
+    "test|t!",
+    "weather|w!",
+    "greeting|g!",
     "sound-dir=s",
     "log=s",
 ) or die "Usage: $0 [options] [location_id] node_number\n" .
     "Options:\n" .
-    "  --location_id=ID    Location ID for weather\n" .
-    "  --node_number=NUM   Node number for announcement\n" .
-    "  --silent=NUM        Silent mode (0=voice, 1=save time+weather, 2=save weather only)\n" .
-    "  --24hour           Use 24-hour clock\n" .
-    "  --timezone=TZ      Use specified timezone\n" .
-    "  --verbose          Enable verbose output\n" .
-    "  --dry-run          Don't actually play or save files\n" .
-    "  --test             Test sound files before playing\n" .
-    "  --weather          Enable weather announcements\n" .
-    "  --greeting         Enable greeting messages\n" .
-    "  --sound-dir=DIR    Use custom sound directory\n" .
-    "  --log=FILE         Log to specified file\n";
-
-# Handle legacy command line arguments
-if (@ARGV) {
-    $options{location_id} = shift @ARGV if @ARGV > 1;
-    $options{node_number} = shift @ARGV;
-    if (@ARGV) {
-        $options{silent} = shift @ARGV;
-        if (@ARGV) {
-            $options{use_24hour} = shift @ARGV;
-        }
-    }
-}
+    "  -l, --location_id=ID    Location ID for weather\n" .
+    "  -n, --node_number=NUM   Node number for announcement\n" .
+    "  -s, --silent=NUM        Silent mode (0=voice, 1=save time+weather, 2=save weather only)\n" .
+    "  -h, --use_24hour        Use 24-hour clock\n" .    
+    "  -z, --timezone=TZ       Use specified timezone\n" .
+    "  -v, --verbose           Enable verbose output\n" .
+    "  -d, --dry-run           Don't actually play or save files\n" .
+    "  -t, --test              Test sound files before playing\n" .
+    "  -w, --weather           Enable weather announcements\n" .
+    "  -g, --greeting          Enable greeting messages\n" .
+    "      --sound-dir=DIR     Use custom sound directory\n" .
+    "      --log=FILE          Log to specified file\n";
 
 # Setup logging
 setup_logging();
@@ -166,44 +154,49 @@ sub get_current_time {
 
 sub process_time {
     my ($now, $use_24hour) = @_;
-    my $files = "";
+    my @files;
     my $sound_dir = $options{custom_sound_dir} || BASE_SOUND_DIR;
     
     if ($options{greeting_enabled}) {
         my $hour = $now->hour;
         my $greeting = $hour < 12 ? "morning" : $hour < 18 ? "afternoon" : "evening";
-        $files .= "$sound_dir/rpt/good$greeting.ulaw ";
+        push @files, "$sound_dir/rpt/good$greeting.ulaw ";
     }
     
-    $files .= "$sound_dir/rpt/thetimeis.ulaw ";
+    push @files, "$sound_dir/rpt/thetimeis.ulaw ";
     
     my ($hour, $minute) = ($now->hour, $now->minute);
     
     if ($use_24hour) {
-        $files .= format_number($hour, $sound_dir);
+        if ($hour < 10) {
+            push @files, "$sound_dir/digits/0.ulaw ";
+        }
+        push @files, format_number($hour, $sound_dir);
+        
         if ($minute == 0) {
-            $files .= "$sound_dir/digits/hundred.ulaw ";
-            $files .= "$sound_dir/hours.ulaw ";
+            push @files, "$sound_dir/digits/hundred.ulaw ";
+            push @files, "$sound_dir/hours.ulaw ";
         } else {
             if ($minute < 10) {
-                $files .= "$sound_dir/digits/0.ulaw ";
+                push @files, "$sound_dir/digits/0.ulaw ";
             }
-            $files .= format_number($minute, $sound_dir);
-            $files .= "$sound_dir/hours.ulaw ";
+            push @files, format_number($minute, $sound_dir);
+            push @files, "$sound_dir/hours.ulaw ";
         }
     } else {
         my $display_hour = ($hour == 0 || $hour == 12) ? 12 : ($hour > 12 ? $hour - 12 : $hour);
-        $files .= "$sound_dir/digits/$display_hour.ulaw ";
+        push @files, "$sound_dir/digits/$display_hour.ulaw ";
+        
         if ($minute != 0) {
             if ($minute < 10) {
-                $files .= "$sound_dir/digits/0.ulaw ";
+                push @files, "$sound_dir/digits/0.ulaw ";
             }
-            $files .= format_number($minute, $sound_dir);
+            push @files, format_number($minute, $sound_dir);
         }
-        $files .= "$sound_dir/digits/" . ($hour < 12 ? "a-m" : "p-m") . ".ulaw ";
+        push @files, "$sound_dir/digits/" . ($hour < 12 ? "a-m" : "p-m") . ".ulaw ";
     }
     
-    return $files;
+    return join("", @files);
 }
 
 sub process_weather {
@@ -240,6 +233,8 @@ sub process_weather {
         
         $files .= format_number($temp, $sound_dir);
         $files .= "$sound_dir/wx/degrees.ulaw ";
+    } else {
+        WARN("Temperature file not found: $temp_file");
     }
     
     return $files;
@@ -278,7 +273,8 @@ sub play_announcement {
     my ($file, $node) = @_;
     my $asterisk_file = File::Spec->catfile(TMP_DIR, "current-time");
     my $asterisk_cmd = sprintf(
-        "/usr/sbin/asterisk -rx \"rpt localplay %s %s\"", $node, $asterisk_file
+        "/usr/bin/asterisk -rx \"rpt localplay %s %s\"",
+        $node, $asterisk_file
     );
     
     if ($options{test_mode}) {
