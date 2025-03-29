@@ -4,7 +4,7 @@ saytime-weather (2.6.0) unstable; urgency=medium
     - Scripts now install to /usr/local/sbin
     - Sound files install to correct Asterisk paths
   * Fixed script permissions and ownership
-    - Set scripts to asterisk:asterisk ownership
+    - Set scripts to root:asterisk ownership
     - Set sound files to asterisk:asterisk ownership
   * Improved option handling
     - Added support for airport codes in location ID
@@ -16,16 +16,27 @@ saytime-weather (2.6.0) unstable; urgency=medium
     - Improved option descriptions
     - Updated usage examples
   * Optimized package dependencies
-    - Removed libgetopt-long-perl (part of perl core)
-    - Updated required Perl module list
+    - Removed unused Perl module dependencies
+    - Added only required dependencies:
+      + libtime-piece-perl
+      + liblog-log4perl-perl
+      + libwww-perl
+      + libjson-perl
+      + libcache-cache-perl
   * Fixed weather script issues
     - Corrected scalar array reference warnings
     - Improved temperature file handling
     - Fixed eval/last issue in weather.pl
+    - Removed unused plocate support
   * Updated sound file organization
     - Removed compound condition files
     - Cleaned up unused sound files
     - Fixed sound file naming convention
+  * Improved Makefile
+    - Added dependency checking
+    - Updated installation instructions
+    - Fixed file ownership settings
+    - Removed updatedb/locate requirements
   * Updated copyright year to 2025
 
  -- Jory A. Pratt <geekypenguin@gmail.com>  Thu, 28 Mar 2024 23:45:00 -0500
