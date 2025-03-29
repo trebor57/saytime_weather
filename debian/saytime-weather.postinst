@@ -2,63 +2,46 @@
 
 set -e
 
-# Run updatedb to update the locate database
-if [ -x /usr/bin/updatedb ]; then
-    echo "Updating locate database..."
-    /usr/bin/updatedb
-fi
+case "$1" in
+    configure)
+        # Create required directories if they don't exist
+        mkdir -p /var/cache/weather
+        mkdir -p /etc/asterisk/local
 
-# Ensure proper ownership of sound files
-if [ -d /usr/share/asterisk/sounds/en ]; then
-    chown -R asterisk:asterisk /usr/share/asterisk/sounds/en/wx
-    chown asterisk:asterisk /usr/share/asterisk/sounds/en/a-m.ulaw /usr/share/asterisk/sounds/en/p-m.ulaw
-fi
+        # Set correct ownership
+        chown -R asterisk:asterisk /var/cache/weather
+        chown -R asterisk:asterisk /usr/share/asterisk/sounds/en/wx
+        chown asterisk:asterisk /usr/local/sbin/saytime.pl
+        chown asterisk:asterisk /usr/local/sbin/weather.pl
 
-# Ensure proper ownership of scripts
-if [ -d /usr/local/sbin ]; then
-    chown root:asterisk /usr/local/sbin/saytime.pl /usr/local/sbin/weather.pl
-    chmod 755 /usr/local/sbin/saytime.pl /usr/local/sbin/weather.pl
-fi
+        # Set correct permissions
+        chmod 755 /usr/local/sbin/saytime.pl
+        chmod 755 /usr/local/sbin/weather.pl
+        chmod 644 /usr/share/asterisk/sounds/en/wx/*
+        chmod 755 /var/cache/weather
 
-# Display post-installation instructions
-cat << EOF
-
-=== Post Installation Instructions ===
-1. Time Announcements Setup:
-   To setup automatic time announcements, add the following to root's crontab:
-   Run: sudo crontab -e
-
-   Add the line (modify time/zip/node as needed):
-   00 07-23 * * * (/usr/bin/nice -19 /usr/local/sbin/saytime.pl 77511 546054 > /dev/null)
-
-   This will announce time hourly from 7AM to 11PM
-
-2. Weather Configuration:
-   To configure weather reporting, create or edit /etc/asterisk/local/weather.ini:
-   Example content:
-   process_condition="YES"
-   Temperature_mode="F"
-   use_wunderground="NO"  # Set to "YES" for international airport codes
-
-3. Weather Underground API Setup (Optional):
-   If using international airport codes, you need to:
-   a. Get an API key from Weather Underground
-   b. Set the environment variable:
-      export WUNDERGROUND_API_KEY="your_api_key_here"
-   c. Set use_wunderground="YES" in weather.ini
-
-4. Testing Installation:
-   Test time announcement: /usr/local/sbin/saytime.pl <zip> <node>
-   Test weather report: /usr/local/sbin/weather.pl <zip/airport/station>
-   
-   Examples:
-   - US location: /usr/local/sbin/weather.pl 19001
-   - US airport: /usr/local/sbin/weather.pl KJFK
-   - International airport: /usr/local/sbin/weather.pl EGLL
-
-Note: Replace zip codes, node numbers, and API keys with your own values.
-=====================================
-
+        # Create default config if it doesn't exist
+        if [ ! -f /etc/asterisk/local/weather.ini ]; then
+            cat > /etc/asterisk/local/weather.ini <<EOF
+use_accuweather="YES"
+use_hvwx="YES"
+cache_enabled="YES"
+cache_duration="1800"
+process_condition="YES"
 EOF
+            chown asterisk:asterisk /etc/asterisk/local/weather.ini
+            chmod 644 /etc/asterisk/local/weather.ini
+        fi
+    ;;
 
-#DEBHELPER# 
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+exit 0 

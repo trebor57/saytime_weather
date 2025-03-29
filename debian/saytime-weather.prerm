@@ -2,6 +2,26 @@
 
 set -e
 
+case "$1" in
+    remove|upgrade|deconfigure)
+        # Clean up cache directory
+        rm -rf /var/cache/weather/*
+
+        # Don't remove config file on upgrade
+        if [ "$1" = "remove" ]; then
+            rm -f /etc/asterisk/local/weather.ini
+        fi
+    ;;
+
+    failed-upgrade)
+    ;;
+
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
 # Remove sound files
 if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
     rm -f /usr/share/asterisk/sounds/en/a-m.ulaw
@@ -9,10 +29,5 @@ if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
     rm -rf /usr/share/asterisk/sounds/en/wx
 fi
 
-# Update locate database after removal
-if [ -x /usr/bin/updatedb ]; then
-    echo "Updating locate database..."
-    /usr/bin/updatedb
-fi
-
-#DEBHELPER# 
+#DEBHELPER#
+exit 0 
