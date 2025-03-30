@@ -14,6 +14,7 @@ use LWP::UserAgent;
 use JSON;
 use Encode qw(decode);
 use Cache::FileCache;
+use File::Spec;
 
 # Define paths at the top of the script
 my @CONFIG_PATHS = (
@@ -30,6 +31,19 @@ my @CACHE_PATHS = (
 my @TEMP_PATHS = (
     "/tmp/temperature",
     "/tmp/condition.ulaw"
+);
+
+use constant {
+    TMP_DIR => "/tmp",
+    TEMP_FILE => "/tmp/temperature",
+    COND_FILE => "/tmp/condition.ulaw",
+    VERSION => '2.6.0',
+    WEATHER_SOUND_DIR => "/usr/share/asterisk/sounds/en/wx",
+};
+
+# Add options hash near the top
+my %options = (
+    verbose => 0,  # Default to non-verbose
 );
 
 # Source the allstar variables - try each config path
@@ -61,15 +75,28 @@ $config{cache_duration} = "1800" unless defined $config{cache_duration};  # 30 m
 my $cache;
 if ($config{cache_enabled} eq "YES") {
     foreach my $cache_path (@CACHE_PATHS) {
-        if (-d $cache_path || mkdir $cache_path) {
-            $cache = Cache::FileCache->new({
-                cache_root => $cache_path,
-                default_expires_in => $config{cache_duration},
-                auto_purge_interval => 3600,  # 1 hour
-                auto_purge_on_set => 1,
-            });
-            last if defined $cache;
+        if (-d $cache_path) {
+            if (!-w $cache_path) {
+                WARN("Cache directory not writable: $cache_path");
+                next;
+            }
+        } elsif (!mkdir $cache_path, 0755) {
+            WARN("Failed to create cache directory: $cache_path - $!");
+            next;
         }
+        $cache = Cache::FileCache->new({
+            cache_root => $cache_path,
+            default_expires_in => $config{cache_duration},
+            auto_purge_interval => 3600,  # 1 hour
+            auto_purge_on_set => 1,
+        });
+        last if defined $cache;
+    }
+    if (!defined $cache) {
+        WARN("Failed to initialize cache - continuing without caching");
+        $config{cache_enabled} = "NO";
+    } else {
+        DEBUG("Cache initialized in: " . $cache->{cache_root}) if $options{verbose};
     }
 }
 
@@ -102,6 +129,12 @@ my $w_type;
 my $current;
 my $Temperature = "";
 my $Condition = "";
+
+# Move location validation before cache check
+validate_options();  # Add this before cache check
+
+# Move cleanup to start of processing
+cleanup_old_files();  # Add this after validating options
 
 # Check cache first if enabled
 if ($config{cache_enabled} eq "YES" && defined $cache) {
@@ -182,7 +215,7 @@ if (not defined $current or $current eq "") {
             }
         }
         
-        # Try hvwx as fallback if enabled and AccuWeather failed
+        # Try hvwx as fallback if enabled
         if ((not defined $current or $current eq "") && $config{use_hvwx} eq "YES") {
             eval {
                 open my $hvwx, "-|", "hvwx", "-z", $location or die "Cannot run hvwx: $!";
@@ -210,12 +243,18 @@ if (not defined $current or $current eq "") {
 }
 
 if (not defined $current or $current eq "") {
-    print "No Report\n";
-    exit;
+    ERROR("No weather report available");
+    exit 1;
 }
 
-# Convert temperature to Celsius if needed
-my $CTEMP = sprintf "%.0f", (5/9) * ($Temperature - 32);
+# Add error handling for temperature conversion
+my $CTEMP = eval {
+    sprintf "%.0f", (5/9) * ($Temperature - 32);
+};
+if ($@) {
+    ERROR("Failed to convert temperature: $@");
+    exit 1;
+}
 print "$Temperature\N{DEGREE SIGN}F, $CTEMP\N{DEGREE SIGN}C / $Condition\n";
 
 # If v given as second parameter just echo text, no sound
@@ -224,8 +263,8 @@ if (defined $display_only and $display_only eq "v") {
 }
 
 # Clean up old files
-unlink "$destdir/temperature";
-unlink "$destdir/condition.ulaw";
+unlink TEMP_FILE;
+unlink COND_FILE;
 
 # Check if Celsius look for reasonably sane temperature
 my $tmin;
@@ -241,9 +280,8 @@ if ($config{Temperature_mode} eq "C") {
 
 # Write temperature file if within valid range
 if ($Temperature >= $tmin and $Temperature <= $tmax) {
-    my $temp_file = $TEMP_PATHS[0];
     eval {
-        open my $temp_fh, '>', $temp_file or die "Cannot open temperature file: $!";
+        open my $temp_fh, '>', TEMP_FILE or die "Cannot open temperature file: $!";
         print $temp_fh $Temperature;
         close $temp_fh;
     };
@@ -256,7 +294,7 @@ if ($Temperature >= $tmin and $Temperature <= $tmax) {
 if ($config{process_condition} eq "YES") {
     my @conditions = map { lc($_) } split /\s+/, $Condition;
     my @condition_files;
-    my $sound_dir = "/usr/share/asterisk/sounds/en/wx";
+    my $sound_dir = WEATHER_SOUND_DIR;
     
     # First try exact condition match
     for my $cond (@conditions) {
@@ -295,16 +333,201 @@ if ($config{process_condition} eq "YES") {
     
     # Write condition sound file if we found any files
     if (@condition_files) {
-        open my $condition_fh, ">:raw", "$destdir/condition.ulaw" or die "Cannot open $destdir/condition.ulaw: $!";
-        for my $file (@condition_files) {
-            if (-f $file) {
-                open my $in_fh, "<:raw", $file or die "Cannot open $file: $!";
-                print $condition_fh scalar <$in_fh>;
-                close $in_fh;
+        eval {
+            open my $condition_fh, ">:raw", COND_FILE or die "Cannot open " . COND_FILE . ": $!";
+            for my $file (@condition_files) {
+                if (-f $file) {
+                    open my $in_fh, "<:raw", $file 
+                        or die "Cannot open $file: $!";
+                    print $condition_fh scalar <$in_fh>;
+                    close $in_fh;
+                }
             }
+            close $condition_fh;
+        };
+        if ($@) {
+            ERROR("Failed to write condition file: $@");
+            exit 1;
         }
-        close $condition_fh;
     } else {
         warn "No weather condition sound files found for: $Condition\n";
     }
 }
+
+# Add more descriptive error messages
+if (!defined $location) {
+    ERROR("Location ID not provided");
+    exit 1;
+}
+
+if (!-d TMP_DIR()) {
+    ERROR("Temporary directory not found: " . TMP_DIR());
+    exit 1;
+}
+
+if (!-w TMP_DIR()) {
+    ERROR("Cannot write to temporary directory: " . TMP_DIR());
+    exit 1;
+}
+
+# Add version to usage
+sub show_usage {
+    print "weather.pl version " . VERSION . "\n\n";
+    print "Usage: $0 location_id\n";
+    exit 1;
+}
+
+sub fetch_weather {
+    my ($location_id) = @_;
+    
+    DEBUG("Fetching weather for location: $location_id") if $options{verbose};
+    
+    # Try AccuWeather RSS feed first if enabled
+    if ($config{use_accuweather} eq "YES") {
+        my $ua = LWP::UserAgent->new(connect_timeout => 15);
+        my $response = $ua->get("https://rss.accuweather.com/rss/liveweather_rss.asp?metric=0&locCode=$location_id");
+        
+        if ($response->is_success) {
+            my $content = $response->decoded_content;
+            if ($content =~ /<title>Currently:\s*(.*?):\s*([-\d]+)F<\/title>/) {
+                return {
+                    condition => $1,
+                    temperature => $2,
+                    type => "accu"
+                };
+            }
+        }
+        
+        DEBUG("AccuWeather fetch failed") if $options{verbose};
+    }
+    
+    # Try hvwx as fallback if enabled
+    if ($config{use_hvwx} eq "YES") {
+        eval {
+            open my $hvwx, "-|", "hvwx", "-z", $location_id 
+                or die "Cannot run hvwx: $!";
+            my $temp = <$hvwx>;
+            chomp $temp;
+            close $hvwx;
+            
+            if ($temp) {
+                return {
+                    temperature => $temp,
+                    condition => "No Report",
+                    type => "hvwx"
+                };
+            }
+        };
+        if ($@) {
+            WARN("hvwx failed: $@");
+        }
+    }
+    
+    # Try Wunderground if it's a station ID
+    if ($location_id =~ /^w-(.*)/ && $config{api_Key}) {
+        my $station = uc($1);
+        my $ua = LWP::UserAgent->new(connect_timeout => 15);
+        my $url = "https://api.weather.com/v2/pws/observations/current?".
+                 "stationId=$station&format=json&units=e&apiKey=$config{api_Key}";
+        
+        my $response = $ua->get($url);
+        if ($response->is_success) {
+            my $json = decode_json($response->decoded_content);
+            if ($json->{observations}->[0]->{temp}) {
+                return {
+                    temperature => $json->{observations}->[0]->{temp},
+                    condition => "",
+                    type => "wunder"
+                };
+            }
+        }
+        
+        DEBUG("Wunderground fetch failed") if $options{verbose};
+    }
+    
+    # If all methods fail
+    ERROR("Failed to fetch weather data for location: $location_id");
+    return;
+}
+
+sub write_temperature {
+    my ($temp) = @_;
+    
+    DEBUG("Writing temperature: $temp") if $options{verbose};
+    
+    open my $fh, '>', TEMP_FILE or die "Cannot write temperature file: $!";
+    print $fh $temp;
+    close $fh;
+    
+    DEBUG("Temperature file written: " . TEMP_FILE) if $options{verbose};
+}
+
+sub cleanup_old_files {
+    DEBUG("Cleaning up old weather files:") if $options{verbose};
+    
+    foreach my $file (TEMP_FILE(), COND_FILE()) {
+        if (-e $file) {
+            DEBUG("  Removing: $file") if $options{verbose};
+            unlink $file or WARN("Could not remove file: $file - $!");
+        }
+    }
+}
+
+sub validate_options {
+    if (!defined $location || $location !~ /^[\w-]+$/) {
+        ERROR("Invalid location: $location");
+        show_usage();
+    }
+}
+
+sub ERROR {
+    my ($msg) = @_;
+    print STDERR "ERROR: $msg\n";
+}
+
+sub DEBUG {
+    my ($msg) = @_;
+    print "$msg\n" if $options{verbose};
+}
+
+sub WARN {
+    my ($msg) = @_;
+    print STDERR "WARNING: $msg\n";
+}
+
+# Add temperature validation function
+sub validate_temperature {
+    my ($temp) = @_;
+    my ($tmin, $tmax) = $config{Temperature_mode} eq "C" 
+        ? (-60, 60) 
+        : (-100, 150);
+    
+    return ($temp >= $tmin && $temp <= $tmax);
+}
+
+# Update error messages to be more descriptive
+if ($location =~ /^w-(.*)/ && !defined $config{api_Key}) {
+    ERROR("Wunderground API key missing in configuration file");
+    show_usage();
+}
+
+# Add signal handlers for cleanup
+$SIG{INT} = $SIG{TERM} = sub {
+    cleanup_old_files();
+    exit 1;
+};
+
+# Add configuration validation
+sub validate_config {
+    if ($config{Temperature_mode} !~ /^[CF]$/) {
+        ERROR("Invalid Temperature_mode: $config{Temperature_mode}");
+        exit 1;
+    }
+    if ($config{cache_duration} !~ /^\d+$/) {
+        WARN("Invalid cache_duration: $config{cache_duration}, using default");
+        $config{cache_duration} = 1800;
+    }
+}
+
+# Call validation after loading config
+validate_config();
