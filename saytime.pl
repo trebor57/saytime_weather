@@ -45,28 +45,26 @@ my %options = (
     greeting_enabled => DEFAULT_GREETING,
     custom_sound_dir => undef,
     log_file => undef,
-    play_method => DEFAULT_PLAY_METHOD,
 );
 
 # Parse command line options
 GetOptions(
-    \%options,
-    "location_id|l=s",
-    "node_number|n=s",
-    "silent|s=i",
-    "use_24hour|h!",
-    "verbose|v!",
-    "dry-run|d!",
-    "test|t!",
-    "weather|w!",
-    "greeting|g!",
-    "sound-dir=s",
-    "log=s",
-    "method|m=s",
+    "location_id|l=s" => \$options{location_id},
+    "node_number|n=s" => \$options{node_number},
+    "silent|s=i" => \$options{silent},
+    "use_24hour|h!" => \$options{use_24hour},
+    "verbose|v!" => \$options{verbose},
+    "dry-run|d!" => \$options{dry_run},
+    "test|t!" => \$options{test_mode},
+    "weather|w!" => \$options{weather_enabled},
+    "greeting|g!" => \$options{greeting_enabled},
+    "sound-dir=s" => \$options{custom_sound_dir},
+    "log=s" => \$options{log_file},
+    "method|m=s" => \$options{play_method},
 ) or show_usage();
 
-# Set default if not specified
-$options{play_method} ||= 'localplay';
+# Set default only if not specified
+$options{play_method} = DEFAULT_PLAY_METHOD unless defined $options{play_method};
 
 # Setup logging
 setup_logging();
@@ -302,11 +300,8 @@ sub play_announcement {
         $asterisk_file
     );
     
-    DEBUG("Playing announcement:") if $options{verbose};
-    DEBUG("  Node: $node") if $options{verbose};
-    DEBUG("  File: $asterisk_file") if $options{verbose};
-    DEBUG("  Method: $options{play_method}") if $options{verbose};
-    DEBUG("  Full command: $asterisk_cmd") if $options{verbose};
+    # Keep this line since it's useful for operations
+    DEBUG("Executing: $asterisk_cmd") if $options{verbose};
     
     my $asterisk_result = system($asterisk_cmd);
     if ($asterisk_result != 0) {
