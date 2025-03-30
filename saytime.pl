@@ -41,6 +41,7 @@ my %options = (
     greeting_enabled => DEFAULT_GREETING,
     custom_sound_dir => undef,
     log_file => undef,
+    playback => 'localplay',
 );
 
 # Parse command line options
@@ -57,6 +58,7 @@ GetOptions(
     "greeting|g!",
     "sound-dir=s",
     "log=s",
+    "playback|p=s",
 ) or show_usage();
 
 # Setup logging
@@ -266,8 +268,8 @@ sub play_announcement {
     my ($file, $node) = @_;
     my $asterisk_file = File::Spec->catfile(TMP_DIR, "current-time");
     my $asterisk_cmd = sprintf(
-        "/usr/sbin/asterisk -rx \"rpt localplay %s %s\"",
-        $node, $asterisk_file
+        "/usr/sbin/asterisk -rx \"rpt %s %s %s\"",
+        $options{playback}, $node, $asterisk_file
     );
     
     if ($options{test_mode}) {
@@ -308,6 +310,7 @@ sub show_usage {
     "  -t, --test              Test sound files before playing (default: off)\n" .
     "  -w, --weather           Enable weather announcements (default: on)\n" .
     "  -g, --greeting          Enable greeting messages (default: on)\n" .
+    "  -p, --playback=METHOD   Playback method (default: localplay)\n" .
     "      --sound-dir=DIR     Use custom sound directory\n" .
     "                          (default: /usr/share/asterisk/sounds/en)\n" .
     "      --log=FILE          Log to specified file (default: none)\n\n" .
