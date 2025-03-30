@@ -67,7 +67,6 @@ $config{process_condition} = "YES" unless defined $config{process_condition};
 $config{Temperature_mode} = "F" unless defined $config{Temperature_mode};
 $config{api_Key} = "" unless defined $config{api_Key};
 $config{use_accuweather} = "YES" unless defined $config{use_accuweather};
-$config{use_hvwx} = "YES" unless defined $config{use_hvwx};
 $config{cache_enabled} = "YES" unless defined $config{cache_enabled};
 $config{cache_duration} = "1800" unless defined $config{cache_duration};  # 30 minutes default
 
@@ -117,7 +116,6 @@ if (not defined $location) {
     print "  - Temperature_mode: C/F (default: F)\n";
     print "  - api_Key: Your Weather Underground API key\n";
     print "  - use_accuweather: YES/NO (default: YES)\n";
-    print "  - use_hvwx: YES/NO (default: YES)\n";
     print "  - cache_enabled: YES/NO (default: YES)\n";
     print "  - cache_duration: Cache duration in seconds (default: 1800)\n";
     print "\n";
@@ -212,29 +210,6 @@ if (not defined $current or $current eq "") {
                         type => "accu"
                     });
                 }
-            }
-        }
-        
-        # Try hvwx as fallback if enabled
-        if ((not defined $current or $current eq "") && $config{use_hvwx} eq "YES") {
-            eval {
-                open my $hvwx, "-|", "hvwx", "-z", $location or die "Cannot run hvwx: $!";
-                $current = <$hvwx>;
-                chomp $current;
-                $Temperature = $current;
-                $Condition = "No Report";
-                
-                # Cache the data if enabled
-                if ($config{cache_enabled} eq "YES" && defined $cache) {
-                    $cache->set($location, {
-                        temperature => $Temperature,
-                        condition => $Condition,
-                        type => "hvwx"
-                    });
-                }
-            };
-            if ($@) {
-                warn "hvwx failed: $@\n";
             }
         }
         
@@ -399,28 +374,6 @@ sub fetch_weather {
         }
         
         DEBUG("AccuWeather fetch failed") if $options{verbose};
-    }
-    
-    # Try hvwx as fallback if enabled
-    if ($config{use_hvwx} eq "YES") {
-        eval {
-            open my $hvwx, "-|", "hvwx", "-z", $location_id 
-                or die "Cannot run hvwx: $!";
-            my $temp = <$hvwx>;
-            chomp $temp;
-            close $hvwx;
-            
-            if ($temp) {
-                return {
-                    temperature => $temp,
-                    condition => "No Report",
-                    type => "hvwx"
-                };
-            }
-        };
-        if ($@) {
-            WARN("hvwx failed: $@");
-        }
     }
     
     # Try Wunderground if it's a station ID
