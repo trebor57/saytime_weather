@@ -1,12 +1,21 @@
 saytime-weather (2.6.1) unstable; urgency=medium
 
-  * Update weather.ini to include required API keys for geocoding and timezone.
-  * Remove hvwx support from weather.pl.
-  * Fix coordinate fetching logic in saytime.pl.
-  * Add timezone handling based on location_id.
-  * Update dependencies in control file.
+  * Added timezone handling based on location ID in saytime.pl.
+  * Updated weather.ini to include required API keys for geocoding and timezone.
+  * Removed hvwx support from weather.pl.
+  * Fixed coordinate fetching logic in saytime.pl to ensure accurate location data.
+  * Added necessary dependencies in debian/control for timezone and geocoding support:
+    - libdatetime-perl
+    - libdatetime-timezone-perl
+    - libjson-perl
+    - libwww-perl
+    - libcache-cache-perl
+    - libconfig-simple-perl
+  * Improved error handling and logging throughout the scripts.
+  * Cleaned up debug output for better clarity.
+  * Ensured that the configuration file is created with clear instructions for users.
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Sun, 30 Mar 2025 13:14:00 -0500
+ -- Jory A. Pratt <geekypenguin@gmail.com>>  Sun, 30 Mar 2025 13:14:00 -0500
 
 saytime-weather (2.6.0) unstable; urgency=medium
 

@@ -1,36 +1,61 @@
 #!/bin/sh
 set -e
 
+# Create necessary directories
+mkdir -p /var/cache/weather
+mkdir -p /etc/asterisk/local
+
+# Create the weather.ini file if it doesn't exist
+CONFIG_FILE="/etc/asterisk/local/weather.ini"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Creating default configuration file: $CONFIG_FILE"
+    cat <<EOT > "$CONFIG_FILE"
+; Weather configuration
+[weather]
+; Process weather condition announcements (YES/NO)
+process_condition = YES
+
+; Temperature display mode (F for Fahrenheit, C for Celsius)
+Temperature_mode = F
+
+; Weather data sources
+use_accuweather = YES
+
+; Weather Underground API key (if using Wunderground stations)
+api_Key = 
+
+; TimeZoneDB API key for timezone lookup (get free key from https://timezonedb.com)
+timezone_api_key = 
+
+; Geocoding API key for location coordinates (get free key from https://opencagedata.com)
+geocode_api_key = 
+
+; Cache settings
+cache_enabled = YES
+cache_duration = 1800
+EOT
+    chmod 0644 "$CONFIG_FILE"
+    echo "Default configuration file created."
+else
+    echo "Configuration file already exists: $CONFIG_FILE"
+fi
+
+# Set correct ownership
+chown -R asterisk:asterisk /var/cache/weather
+chown -R asterisk:asterisk /usr/share/asterisk/sounds/en/wx
+chown asterisk:asterisk /usr/local/sbin/saytime.pl
+chown asterisk:asterisk /usr/local/sbin/weather.pl
+
+# Set correct permissions
+chmod 755 /usr/local/sbin/saytime.pl
+chmod 755 /usr/local/sbin/weather.pl
+chmod 644 /usr/share/asterisk/sounds/en/wx/*
+chmod 755 /var/cache/weather
+
 case "$1" in
     configure)
-        # Create required directories if they don't exist
-        mkdir -p /var/cache/weather
-        mkdir -p /etc/asterisk/local
-
-        # Set correct ownership
-        chown -R asterisk:asterisk /var/cache/weather
-        chown -R asterisk:asterisk /usr/share/asterisk/sounds/en/wx
-        chown asterisk:asterisk /usr/local/sbin/saytime.pl
-        chown asterisk:asterisk /usr/local/sbin/weather.pl
-
-        # Set correct permissions
-        chmod 755 /usr/local/sbin/saytime.pl
-        chmod 755 /usr/local/sbin/weather.pl
-        chmod 644 /usr/share/asterisk/sounds/en/wx/*
-        chmod 755 /var/cache/weather
-
-        # Create default config if it doesn't exist
-        if [ ! -f /etc/asterisk/local/weather.ini ]; then
-            cat > /etc/asterisk/local/weather.ini <<EOF
-use_accuweather="YES"
-use_hvwx="YES"
-cache_enabled="YES"
-cache_duration="1800"
-process_condition="YES"
-EOF
-            chown asterisk:asterisk /etc/asterisk/local/weather.ini
-            chmod 644 /etc/asterisk/local/weather.ini
-        fi
+        # Other post-installation tasks can go here
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
