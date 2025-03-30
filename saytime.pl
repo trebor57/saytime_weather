@@ -293,9 +293,13 @@ sub play_announcement {
         return;
     }
     
+    # Both methods use same format: "rpt <method> <node> <file>"
     my $asterisk_cmd = sprintf(
         "%s -rx \"rpt %s %s %s\"",
-        ASTERISK_BIN, $options{play_method}, $node, $asterisk_file
+        ASTERISK_BIN,
+        $options{play_method},
+        $node,
+        $asterisk_file
     );
     
     DEBUG("Playing announcement:") if $options{verbose};
