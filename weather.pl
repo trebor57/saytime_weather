@@ -59,6 +59,35 @@ foreach my $config_file (@CONFIG_PATHS) {
         }
         close $fh;
         last;  # Stop after first successful config file
+    } else {
+        DEBUG("Creating default configuration file: $config_file") if $options{verbose};
+        
+        open my $fh, '>', $config_file
+            or die "Cannot create config file $config_file: $!";
+        
+        print $fh <<'EOT';
+; Weather configuration
+[weather]
+; Process weather condition announcements (YES/NO)
+process_condition = YES
+
+; Temperature display mode (F for Fahrenheit, C for Celsius)
+Temperature_mode = F
+
+; Weather data sources
+use_accuweather = YES
+
+; Weather Underground API key (if using Wunderground stations)
+api_Key = 
+
+; Cache settings
+cache_enabled = YES
+cache_duration = 1800
+EOT
+        close $fh;
+        
+        chmod 0644, $config_file
+            or die "Cannot set permissions on $config_file: $!";
     }
 }
 
@@ -348,7 +377,14 @@ if (!-w TMP_DIR()) {
 # Add version to usage
 sub show_usage {
     print "weather.pl version " . VERSION . "\n\n";
-    print "Usage: $0 location_id\n";
+    print "Usage: $0 location_id\n\n";
+    print "Configuration in /etc/asterisk/local/weather.ini:\n";
+    print "  - Temperature_mode: F/C (set to C for Celsius, F for Fahrenheit)\n";
+    print "  - process_condition: YES/NO (default: YES)\n";
+    print "  - use_accuweather: YES/NO (default: YES)\n";
+    print "  - api_Key: Your Weather Underground API key\n";
+    print "  - cache_enabled: YES/NO (default: YES)\n";
+    print "  - cache_duration: Cache duration in seconds (default: 1800)\n";
     exit 1;
 }
 
