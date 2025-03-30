@@ -37,7 +37,7 @@ use constant {
     TMP_DIR => "/tmp",
     TEMP_FILE => "/tmp/temperature",
     COND_FILE => "/tmp/condition.ulaw",
-    VERSION => '2.6.0',
+    VERSION => '2.6.1',
     WEATHER_SOUND_DIR => "/usr/share/asterisk/sounds/en/wx",
 };
 

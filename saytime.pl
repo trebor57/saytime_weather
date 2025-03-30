@@ -29,7 +29,7 @@ use constant {
     ASTERISK_BIN => "/usr/sbin/asterisk",
     DEFAULT_PLAY_METHOD => 'localplay',
     PLAY_DELAY => 5,  # Seconds to wait after playing announcement
-    VERSION => '2.6.0',
+    VERSION => '2.6.1',
 };
 
 # Command line options
