@@ -26,6 +26,10 @@ use constant {
     DEFAULT_WEATHER_ENABLED => 1,
     DEFAULT_24HOUR => 0,
     DEFAULT_GREETING => 1,
+    ASTERISK_BIN => "/usr/sbin/asterisk",
+    DEFAULT_PLAY_METHOD => 'localplay',
+    PLAY_DELAY => 5,  # Seconds to wait after playing announcement
+    VERSION => '2.6.0',
 };
 
 # Command line options
@@ -41,7 +45,7 @@ my %options = (
     greeting_enabled => DEFAULT_GREETING,
     custom_sound_dir => undef,
     log_file => undef,
-    playback => 'localplay',
+    play_method => DEFAULT_PLAY_METHOD,
 );
 
 # Parse command line options
@@ -58,8 +62,11 @@ GetOptions(
     "greeting|g!",
     "sound-dir=s",
     "log=s",
-    "playback|p=s",
+    "method|m=s",
 ) or show_usage();
+
+# Set default if not specified
+$options{play_method} ||= 'localplay';
 
 # Setup logging
 setup_logging();
@@ -88,7 +95,7 @@ if ($final_sound_files) {
 }
 
 if ($options{silent} == 0) {
-    play_announcement($output_file, $options{node_number});
+    play_announcement($options{node_number}, $output_file);
     cleanup_files($output_file, $options{weather_enabled}, $options{silent});
 } elsif ($options{silent} == 1 || $options{silent} == 2) {
     INFO("Saved sound file to $output_file");
@@ -113,6 +120,11 @@ sub setup_logging {
 }
 
 sub validate_options {
+    # Validate play method first since it's used in play_announcement
+    if ($options{play_method} !~ /^(localplay|playback)$/) {
+        die "Invalid play method: $options{play_method} (must be 'localplay' or 'playback')\n";
+    }
+    
     # Show usage if no node number provided via options or arguments
     show_usage() unless defined $options{node_number} || @ARGV;
     
@@ -198,11 +210,17 @@ sub process_weather {
     my ($location_id) = @_;
     return "" unless $options{weather_enabled} && defined $location_id;
     
+    DEBUG("Fetching weather for location: $location_id") if $options{verbose};
+    
     my $weather_cmd = sprintf("%s %s", WEATHER_SCRIPT, $location_id);
     my $weather_result = system($weather_cmd);
     
     if ($weather_result != 0) {
-        WARN("Weather script failed with exit code: $weather_result");
+        my $exit_code = $? >> 8;
+        ERROR("Weather script failed:");
+        ERROR("  Location: $location_id");
+        ERROR("  Command: $weather_cmd");
+        ERROR("  Exit code: $exit_code");
         return "";
     }
     
@@ -265,39 +283,63 @@ sub create_output_file {
 }
 
 sub play_announcement {
-    my ($file, $node) = @_;
-    my $asterisk_file = File::Spec->catfile(TMP_DIR, "current-time");
-    my $asterisk_cmd = sprintf(
-        "/usr/sbin/asterisk -rx \"rpt %s %s %s\"",
-        $options{playback}, $node, $asterisk_file
-    );
+    my ($node, $asterisk_file) = @_;
+    
+    # Remove .ulaw extension for Asterisk command
+    $asterisk_file =~ s/\.ulaw$//;
     
     if ($options{test_mode}) {
-        INFO("Test mode - would run: $asterisk_cmd");
+        INFO("Test mode - would execute: rpt $options{play_method} $node $asterisk_file");
         return;
     }
     
+    my $asterisk_cmd = sprintf(
+        "%s -rx \"rpt %s %s %s\"",
+        ASTERISK_BIN, $options{play_method}, $node, $asterisk_file
+    );
+    
+    DEBUG("Playing announcement:") if $options{verbose};
+    DEBUG("  Node: $node") if $options{verbose};
+    DEBUG("  File: $asterisk_file") if $options{verbose};
+    DEBUG("  Method: $options{play_method}") if $options{verbose};
+    DEBUG("  Full command: $asterisk_cmd") if $options{verbose};
+    
     my $asterisk_result = system($asterisk_cmd);
     if ($asterisk_result != 0) {
-        ERROR("Asterisk command failed with exit code: $asterisk_result");
+        my $exit_code = $? >> 8;
+        ERROR("Failed to play announcement:");
+        ERROR("  Method: $options{play_method}");
+        ERROR("  Command: $asterisk_cmd");
+        ERROR("  Exit code: $exit_code");
     }
-    sleep 5;
+    sleep PLAY_DELAY;
 }
 
 sub cleanup_files {
     my ($file_to_delete, $weather_enabled, $silent) = @_;
+    
+    DEBUG("Cleaning up temporary files:") if $options{verbose};
+    
     if (defined $file_to_delete && $silent == 0) {
+        DEBUG("  Removing announcement file: $file_to_delete") if $options{verbose};
         unlink $file_to_delete if -e $file_to_delete;
     }
+    
     if ($weather_enabled && ($silent == 1 || $silent == 2 || $silent == 0)) {
-        unlink File::Spec->catfile(TMP_DIR, "temperature")
-            if -e File::Spec->catfile(TMP_DIR, "temperature");
-        unlink File::Spec->catfile(TMP_DIR, "condition.ulaw")
-            if -e File::Spec->catfile(TMP_DIR, "condition.ulaw");
+        my $temp_file = File::Spec->catfile(TMP_DIR, "temperature");
+        my $cond_file = File::Spec->catfile(TMP_DIR, "condition.ulaw");
+        
+        DEBUG("  Removing weather files:") if $options{verbose};
+        DEBUG("    - $temp_file") if $options{verbose};
+        DEBUG("    - $cond_file") if $options{verbose};
+        
+        unlink $temp_file if -e $temp_file;
+        unlink $cond_file if -e $cond_file;
     }
 }
 
 sub show_usage {
+    print "saytime.pl version " . VERSION . "\n\n";
     die "Usage: $0 [options] [location_id] node_number\n" .
     "Options:\n" .
     "  -l, --location_id=ID    Location ID for weather (default: none)\n" .
@@ -310,7 +352,9 @@ sub show_usage {
     "  -t, --test              Test sound files before playing (default: off)\n" .
     "  -w, --weather           Enable weather announcements (default: on)\n" .
     "  -g, --greeting          Enable greeting messages (default: on)\n" .
-    "  -p, --playback=METHOD   Playback method (default: localplay)\n" .
+    "  -m, --method=METHOD     Playback method (default: localplay)\n" .
+    "                          localplay: use local sound device\n" .
+    "                          playback: use Asterisk playback application\n" .
     "      --sound-dir=DIR     Use custom sound directory\n" .
     "                          (default: /usr/share/asterisk/sounds/en)\n" .
     "      --log=FILE          Log to specified file (default: none)\n\n" .
