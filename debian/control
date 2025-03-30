@@ -11,17 +11,18 @@ Package: saytime-weather
 Architecture: all
 Depends: ${perl:Depends},
          ${misc:Depends},
-         libtime-piece-perl,
-         libtime-local-perl,
-         liblog-log4perl-perl,
-         libwww-perl,
+         asterisk,
+         libdatetime-perl,
+         libdatetime-timezone-perl,
          libjson-perl,
-         libcache-cache-perl
-Description: Time and weather announcement system for Asterisk
- Announces the current time and weather conditions through
- Asterisk. Supports 12/24 hour time formats, multiple
- timezones, and weather information from various sources.
- Designed for use with radio systems and repeater controllers.
+         libwww-perl,
+         libcache-cache-perl,
+         libconfig-simple-perl
+Description: Time and weather announcement scripts for Asterisk
+ Scripts to announce time and weather conditions through Asterisk.
+ Supports both local and network weather stations, with caching
+ and temperature conversion options. Time announcements support
+ both 12 and 24-hour formats with optional weather reports.
  .
  Features include:
   * Time announcements in 12/24 hour format

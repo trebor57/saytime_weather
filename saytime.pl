@@ -14,6 +14,12 @@ use Time::Piece;
 use File::Spec;
 use Getopt::Long;
 use Log::Log4perl qw(:easy);
+use DateTime;
+use DateTime::TimeZone;
+use LWP::UserAgent;
+use JSON;
+use Config::Simple;
+use URI::Escape;
 
 # Constants
 use constant {
@@ -30,6 +36,8 @@ use constant {
     DEFAULT_PLAY_METHOD => 'localplay',
     PLAY_DELAY => 5,  # Seconds to wait after playing announcement
     VERSION => '2.6.1',
+    TIMEZONE_API_URL => "http://api.timezonedb.com/v2.1/get-time-zone",
+    TIMEZONE_API_KEY => "",  # Would need to be configurable in weather.ini
 };
 
 # Command line options
@@ -69,11 +77,59 @@ $options{play_method} = DEFAULT_PLAY_METHOD unless defined $options{play_method}
 # Setup logging
 setup_logging();
 
+# Load configuration
+my %config;
+my $config_file = '/etc/asterisk/local/weather.ini';
+if (-f $config_file) {
+    Config::Simple->import_from($config_file, \%config)
+        or die "Cannot load config file $config_file: " . Config::Simple->error();
+} else {
+    # Create default config file if it doesn't exist
+    DEBUG("Creating default configuration file: $config_file") if $options{verbose};
+    
+    open my $fh, '>', $config_file
+        or die "Cannot create config file $config_file: $!";
+    
+    print $fh <<'EOT';
+; Weather configuration
+[weather]
+; Process weather condition announcements (YES/NO)
+process_condition = YES
+
+; Temperature display mode (F for Fahrenheit, C for Celsius)
+Temperature_mode = F
+
+; Weather data sources
+use_accuweather = YES
+
+; Weather Underground API key (if using Wunderground stations)
+api_Key = 
+
+; TimeZoneDB API key for timezone lookup (get free key from https://timezonedb.com)
+timezone_api_key = 
+
+; Geocoding API key for location coordinates (get free key from https://opencagedata.com)
+geocode_api_key = 
+
+; Cache settings
+cache_enabled = YES
+cache_duration = 1800
+EOT
+    close $fh;
+    
+    chmod 0644, $config_file
+        or die "Cannot set permissions on $config_file: $!";
+}
+
+# Set defaults if not in config
+$config{"weather.timezone_api_key"} ||= "";
+$config{"weather.geocode_api_key"} ||= "";  # Ensure geocode API key is set
+
 # Validate options
 validate_options();
 
 # Get current time in specified timezone
-my $now = get_current_time();
+my $now = get_current_time($options{location_id});
 
 # Process time and weather
 my $time_sound_files = process_time($now, $options{use_24hour});
@@ -154,7 +210,144 @@ sub validate_options {
 }
 
 sub get_current_time {
-    return localtime;
+    my ($location_id) = @_;
+    
+    if (defined $location_id) {
+        DEBUG("Getting timezone for location: $location_id") if $options{verbose};
+        my ($lat, $long) = get_location_coordinates($location_id);
+        if (defined $lat && defined $long) {
+            DEBUG("Found coordinates: $lat, $long") if $options{verbose};
+            my $timezone = get_location_timezone($lat, $long);
+            if ($timezone ne 'local') {
+                DEBUG("Using timezone: $timezone") if $options{verbose};
+                # Fix: Create DateTime object with explicit timezone
+                my $dt = DateTime->now;
+                $dt->set_time_zone($timezone);
+                DEBUG("Time in $timezone: " . $dt->hms) if $options{verbose};
+                return $dt;
+            }
+            DEBUG("Timezone lookup failed, using local time") if $options{verbose};
+        } else {
+            DEBUG("Could not get coordinates for location: $location_id") if $options{verbose};
+        }
+    }
+    
+    # Fallback to system time
+    DEBUG("Using system local time") if $options{verbose};
+    return DateTime->now(time_zone => 'local');
+}
+
+sub get_location_timezone {
+    my ($lat, $long) = @_;
+    return 'local' unless defined $lat && defined $long;
+    
+    DEBUG("Getting timezone for coordinates: $lat, $long") if $options{verbose};
+    
+    my $api_key = $config{"weather.timezone_api_key"};
+    if (!$api_key) {
+        DEBUG("No timezone API key configured") if $options{verbose};
+        return 'local';
+    }
+    
+    my $ua = LWP::UserAgent->new(timeout => 10);
+    my $url = sprintf(
+        "%s?key=%s&format=json&by=position&lat=%s&lng=%s",
+        TIMEZONE_API_URL,
+        $api_key,
+        $lat,
+        $long
+    );
+    
+    DEBUG("Fetching timezone URL: $url") if $options{verbose};
+    
+    my $response = $ua->get($url);
+    if ($response->is_success) {
+        my $data = decode_json($response->content);
+        DEBUG("Got timezone response: " . $response->content) if $options{verbose};
+        if ($data->{status} eq 'OK') {
+            DEBUG("Found timezone: $data->{zoneName}") if $options{verbose};
+            return $data->{zoneName};  # Returns like "America/New_York"
+        }
+        DEBUG("Invalid timezone response status: $data->{status}") if $options{verbose};
+    } else {
+        DEBUG("Timezone request failed: " . $response->status_line) if $options{verbose};
+    }
+    
+    WARN("Failed to get timezone, using system local time");
+    return 'local';
+}
+
+sub get_location_coordinates {
+    my ($location_id) = @_;
+    return (undef, undef) unless defined $location_id;
+    
+    DEBUG("Getting coordinates for location: $location_id") if $options{verbose};
+    
+    # Try AccuWeather first
+    if ($config{"weather.use_accuweather"} eq "YES") {
+        my $ua = LWP::UserAgent->new(timeout => 10);
+        my $url = "https://rss.accuweather.com/rss/liveweather_rss.asp?locCode=$location_id";
+        DEBUG("Fetching AccuWeather URL: $url") if $options{verbose};
+        
+        my $response = $ua->get($url);
+        if ($response->is_success) {
+            my $content = $response->decoded_content;
+            DEBUG("Got AccuWeather response:\n$content") if $options{verbose};
+            
+            # Extract location name from title
+            if ($content =~ m{<title>([^,]+),\s*([A-Z]{2}) - AccuWeather\.com Forecast</title>}i) {
+                my $city = $1;
+                my $state = $2;
+                DEBUG("Found location: $city, $state") if $options{verbose};
+                
+                # Clean up the location name for geocoding
+                my $location_name = "$city, $state";
+                DEBUG("Using cleaned location name for geocoding: $location_name") if $options{verbose};
+                
+                # Use a geocoding API to get coordinates
+                return get_coordinates_from_geocoding_api($location_name);
+            } else {
+                DEBUG("Could not find location name in AccuWeather response") if $options{verbose};
+            }
+        } else {
+            DEBUG("AccuWeather request failed: " . $response->status_line) if $options{verbose};
+        }
+    }
+    
+    DEBUG("Failed to get coordinates for location: $location_id") if $options{verbose};
+    return (undef, undef);
+}
+
+sub get_coordinates_from_geocoding_api {
+    my ($location_name) = @_;
+    
+    my $api_key = $config{"weather.geocode_api_key"};
+    unless ($api_key) {
+        WARN("Geocoding API key is not set in the configuration.");
+        return (undef, undef);
+    }
+    
+    my $ua = LWP::UserAgent->new(timeout => 10);
+    my $geocode_url = "https://api.opencagedata.com/geocode/v1/json?q=" . uri_escape($location_name) . "&key=" . $api_key;
+    
+    DEBUG("Fetching geocoding URL: $geocode_url") if $options{verbose};
+    
+    my $response = $ua->get($geocode_url);
+    if ($response->is_success) {
+        my $data = decode_json($response->content);
+        if ($data->{results} && @{$data->{results}}) {
+            my $lat = $data->{results}->[0]->{geometry}->{lat};
+            my $long = $data->{results}->[0]->{geometry}->{lng};
+            DEBUG("Found coordinates from geocoding API: $lat, $long") if $options{verbose};
+            return ($lat, $long);
+        } else {
+            DEBUG("No results found in geocoding response") if $options{verbose};
+        }
+    } else {
+        DEBUG("Geocoding request failed: " . $response->status_line) if $options{verbose};
+    }
+    
+    return (undef, undef);
 }
 
 sub process_time {
@@ -359,5 +552,8 @@ sub show_usage {
     "      --log=FILE          Log to specified file (default: none)\n\n" .
     "Location ID can be either:\n" .
     "  - 5-digit location code (e.g., 77511)\n" .
-    "  - 3-4 letter airport code (e.g., KHOU)\n";
+    "  - 3-4 letter airport code (e.g., KHOU)\n" .
+    "Configuration in /etc/asterisk/local/weather.ini:\n";
+    print "  - timezone_api_key: Your TimeZoneDB API key (get from https://timezonedb.com)\n";
+    print "  - Temperature_mode: F/C (set to C for Celsius, F for Fahrenheit)\n";
 }
