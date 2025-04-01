@@ -124,6 +124,7 @@ EOT
 # Set defaults if not in config
 $config{"weather.timezone_api_key"} ||= "";
 $config{"weather.geocode_api_key"} ||= "";  # Ensure geocode API key is set
+$config{"weather.use_accuweather"} ||= "YES"; # Set default value for use_accuweather
 
 # Validate options
 validate_options();
@@ -159,6 +160,11 @@ if ($options{silent} == 0) {
 # Subroutines
 sub setup_logging {
     my $log_level = $options{verbose} ? $DEBUG : $INFO;
+    if ($options{verbose}) {
+        $log_level = $DEBUG;
+    } else {
+        $log_level = $INFO;
+    }
     if ($options{log}) {
         Log::Log4perl->easy_init({
             level => $log_level,
@@ -215,21 +221,21 @@ sub get_current_time {
     if (defined $location_id) {
         DEBUG("Getting timezone for location: $location_id") if $options{verbose};
         my ($lat, $long) = get_location_coordinates($location_id);
-        if (defined $lat && defined $long) {
-            DEBUG("Found coordinates: $lat, $long") if $options{verbose};
-            my $timezone = get_location_timezone($lat, $long);
-            if ($timezone ne 'local') {
-                DEBUG("Using timezone: $timezone") if $options{verbose};
-                # Fix: Create DateTime object with explicit timezone
-                my $dt = DateTime->now;
-                $dt->set_time_zone($timezone);
-                DEBUG("Time in $timezone: " . $dt->hms) if $options{verbose};
-                return $dt;
-            }
-            DEBUG("Timezone lookup failed, using local time") if $options{verbose};
-        } else {
-            DEBUG("Could not get coordinates for location: $location_id") if $options{verbose};
+        unless (defined $lat && defined $long) {
+            WARN("Coordinates for location ID $location_id are not defined.");
+            return DateTime->now(time_zone => 'local');
         }
+        DEBUG("Found coordinates: $lat, $long") if $options{verbose};
+        my $timezone = get_location_timezone($lat, $long);
+        if ($timezone ne 'local') {
+            DEBUG("Using timezone: $timezone") if $options{verbose};
+            # Fix: Create DateTime object with explicit timezone
+            my $dt = DateTime->now;
+            $dt->set_time_zone($timezone);
+            DEBUG("Time in $timezone: " . $dt->hms) if $options{verbose};
+            return $dt;
+        }
+        DEBUG("Timezone lookup failed, using local time") if $options{verbose};
     }
     
     # Fallback to system time
