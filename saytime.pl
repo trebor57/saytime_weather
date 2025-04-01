@@ -252,6 +252,7 @@ sub get_location_timezone {
     my $api_key = $config{"weather.timezone_api_key"};
     if (!$api_key) {
         DEBUG("No timezone API key configured") if $options{verbose};
+        Log::Log4perl::get_logger()->warn("No timezone API key configured");
         return 'local';
     }
     
@@ -317,10 +318,12 @@ sub get_location_coordinates {
             }
         } else {
             DEBUG("AccuWeather request failed: " . $response->status_line) if $options{verbose};
+            Log::Log4perl::get_logger()->warn("AccuWeather request failed: " . $response->status_line);
         }
     }
     
     DEBUG("Failed to get coordinates for location: $location_id") if $options{verbose};
+    Log::Log4perl::get_logger()->warn("Failed to get coordinates for location: $location_id");
     return (undef, undef);
 }
 
@@ -555,11 +558,13 @@ sub show_usage {
     "                          playback: use Asterisk playback application\n" .
     "      --sound-dir=DIR     Use custom sound directory\n" .
     "                          (default: /usr/share/asterisk/sounds/en)\n" .
-    "      --log=FILE          Log to specified file (default: none)\n\n" .
+    "      --log=FILE          Log to specified file (default: none)\n" .
+    "      --help              Show this help message and exit\n\n" .
     "Location ID can be either:\n" .
     "  - 5-digit location code (e.g., 77511)\n" .
     "  - 3-4 letter airport code (e.g., KHOU)\n" .
     "Configuration in /etc/asterisk/local/weather.ini:\n";
     print "  - timezone_api_key: Your TimeZoneDB API key (get from https://timezonedb.com)\n";
+    print "  - geocode_api_key: Your Geocoding API key (get from https://opencagedata.com)\n";
     print "  - Temperature_mode: F/C (set to C for Celsius, F for Fahrenheit)\n";
 }
