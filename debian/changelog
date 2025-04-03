@@ -1,17 +1,19 @@
 # Changelog
 
-## [2.6.2] - 2025-04-02
-### Changed
-- Updated version number to `2.6.2` in `saytime.pl` and `weather.pl`.
-- Ensured all variables are defined to prevent undefined values in `weather.pl`.
-- Updated the Weather Underground API key variable name to `wunderground_api_key` for consistency across files.
+saytime (2.6.2) unstable; urgency=medium
 
-### Added
-- Improved error handling and logging for better debugging and user feedback.
+  * Updated version number to `2.6.2` in `saytime.pl` and `weather.pl`.
+  * Ensured all variables are defined to prevent undefined values in `weather.pl`.
+  * Updated the Weather Underground API key variable name to `wunderground_api_key` for consistency across files.
+  * Improved error handling and logging for better debugging and user feedback.
 
-## [2.6.1] - 2025-03-30
-### Initial Release
-- Initial release of the saytime and weather scripts.
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 02 April 2025
+
+saytime (2.6.1) unstable; urgency=medium
+
+  * Initial release of the saytime and weather scripts.
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Sun, 30 March 2025
 
 saytime-weather (2.6.1) unstable; urgency=medium
 
