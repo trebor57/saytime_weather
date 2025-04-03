@@ -5,13 +5,13 @@ saytime-weather (2.6.2) unstable; urgency=medium
   * Updated the Weather Underground API key variable name to `wunderground_api_key` for consistency across files.
   * Improved error handling and logging for better debugging and user feedback.
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 02 April 2025 12:00:00 -0500
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 02 Apr 2025 12:00:00 -0500
 
 saytime-weather (2.6.1) unstable; urgency=medium
 
   * Initial release of the saytime and weather scripts.
 
- -- Jory A. Pratt <geekypenguin@gmail.com>  Sun, 30 March 2025 12:00:00 -0500
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Sun, 30 Mar 2025 12:00:00 -0500
 
 saytime-weather (2.6.1) unstable; urgency=medium
 
