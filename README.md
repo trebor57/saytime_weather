@@ -18,8 +18,8 @@ A time and weather announcement system for Asterisk, designed for use with radio
 1. **Install the Package and Dependencies**:
    ```bash
    cd /tmp
-   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.6.1/saytime-weather_2.6.1_all.deb
-   sudo apt install ./saytime-weather_2.6.1_all.deb
+   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.6.2/saytime-weather_2.6.2_all.deb
+   sudo apt install ./saytime-weather_2.6.2_all.deb
    ```
 
 This will:
@@ -34,7 +34,7 @@ This will:
    process_condition = YES
    Temperature_mode = F  ; Set to C for Celsius
    use_accuweather = YES
-   api_Key = YOUR_WUNDERGROUND_API_KEY
+   wunderground_api_key = YOUR_WUNDERGROUND_API_KEY
    timezone_api_key = YOUR_TIMEZONEDB_API_KEY
    geocode_api_key = YOUR_OPENCAGE_API_KEY
    cache_enabled = YES
