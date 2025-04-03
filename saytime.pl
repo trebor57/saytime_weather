@@ -35,7 +35,7 @@ use constant {
     ASTERISK_BIN => "/usr/sbin/asterisk",
     DEFAULT_PLAY_METHOD => 'localplay',
     PLAY_DELAY => 5,  # Seconds to wait after playing announcement
-    VERSION => '2.6.1',
+    VERSION => '2.6.2',
     TIMEZONE_API_URL => "http://api.timezonedb.com/v2.1/get-time-zone",
     TIMEZONE_API_KEY => "",  # Would need to be configurable in weather.ini
 };
@@ -103,7 +103,7 @@ Temperature_mode = F
 use_accuweather = YES
 
 ; Weather Underground API key (if using Wunderground stations)
-api_Key = 
+wunderground_api_key = 
 
 ; TimeZoneDB API key for timezone lookup (get free key from https://timezonedb.com)
 timezone_api_key = 
@@ -122,6 +122,7 @@ EOT
 }
 
 # Set defaults if not in config
+$config{"weather.wunderground_api_key"} ||= "";  # Ensure wunderground_api_key is set
 $config{"weather.timezone_api_key"} ||= "";
 $config{"weather.geocode_api_key"} ||= "";  # Ensure geocode API key is set
 $config{"weather.use_accuweather"} ||= "YES"; # Set default value for use_accuweather

@@ -37,7 +37,7 @@ use constant {
     TMP_DIR => "/tmp",
     TEMP_FILE => "/tmp/temperature",
     COND_FILE => "/tmp/condition.ulaw",
-    VERSION => '2.6.1',
+    VERSION => '2.6.2',
     WEATHER_SOUND_DIR => "/usr/share/asterisk/sounds/en/wx",
 };
 
@@ -78,7 +78,7 @@ Temperature_mode = F
 use_accuweather = YES
 
 ; Weather Underground API key (if using Wunderground stations)
-api_Key = 
+wunderground_api_key = 
 
 ; Cache settings
 cache_enabled = YES
@@ -94,7 +94,7 @@ EOT
 # Set default values for all configuration options
 $config{process_condition} = "YES" unless defined $config{process_condition};
 $config{Temperature_mode} = "F" unless defined $config{Temperature_mode};
-$config{api_Key} = "" unless defined $config{api_Key};
+$config{wunderground_api_key} = "" unless defined $config{wunderground_api_key};
 $config{use_accuweather} = "YES" unless defined $config{use_accuweather};
 $config{cache_enabled} = "YES" unless defined $config{cache_enabled};
 $config{cache_duration} = "1800" unless defined $config{cache_duration};  # 30 minutes default
@@ -128,10 +128,11 @@ if ($config{cache_enabled} eq "YES") {
     }
 }
 
-my $location = shift @ARGV;
-my $display_only = shift @ARGV;
+# Ensure location and display_only are defined
+my $location = shift @ARGV // '';
+my $display_only = shift @ARGV // '';
 
-if (not defined $location) {
+if (not defined $location || $location eq '') {
     print "\n";
     print "USAGE: $0 <local zip, airport code, or w-<wunderground station code>\n";
     print "\n";
@@ -143,7 +144,7 @@ if (not defined $location) {
     print "Edit /etc/asterisk/local/weather.ini to configure:\n";
     print "  - process_condition: YES/NO (default: YES)\n";
     print "  - Temperature_mode: C/F (default: F)\n";
-    print "  - api_Key: Your Weather Underground API key\n";
+    print "  - wunderground_api_key: Your Weather Underground API key\n";
     print "  - use_accuweather: YES/NO (default: YES)\n";
     print "  - cache_enabled: YES/NO (default: YES)\n";
     print "  - cache_duration: Cache duration in seconds (default: 1800)\n";
@@ -152,10 +153,10 @@ if (not defined $location) {
 }
 
 my $destdir = "/tmp";
-my $w_type;
-my $current;
-my $Temperature = "";
-my $Condition = "";
+my $w_type = "";  # Initialize to avoid undefined
+my $current = "";  # Initialize to avoid undefined
+my $Temperature = "";  # Initialize to avoid undefined
+my $Condition = "";  # Initialize to avoid undefined
 
 # Move location validation before cache check
 validate_options();  # Add this before cache check
@@ -167,27 +168,27 @@ cleanup_old_files();  # Add this after validating options
 if ($config{cache_enabled} eq "YES" && defined $cache) {
     my $cached_data = $cache->get($location);
     if ($cached_data) {
-        $Temperature = $cached_data->{temperature};
-        $Condition = $cached_data->{condition};
+        $Temperature = $cached_data->{temperature} // '';
+        $Condition = $cached_data->{condition} // '';
         $current = "$Condition: $Temperature";
-        $w_type = $cached_data->{type};
+        $w_type = $cached_data->{type} // '';
     }
 }
 
 # If no cached data, fetch from API
 if (not defined $current or $current eq "") {
     if ($location =~ /^w-(.*)/) {
-        if (not defined $config{api_Key} or $config{api_Key} eq "") {
+        if (not defined $config{wunderground_api_key} or $config{wunderground_api_key} eq "") {
             print "\nwunderground api key missing\n";
             exit;
         }
         my $wunder_code = uc($1);
         $w_type = "wunder";
         my $ua = LWP::UserAgent->new(connect_timeout => 15);
-        my $response = $ua->get("https://api.weather.com/v2/pws/observations/current?stationId=$wunder_code&format=json&units=e&apiKey=$config{api_Key}");
+        my $response = $ua->get("https://api.weather.com/v2/pws/observations/current?stationId=$wunder_code&format=json&units=e&apiKey=$config{wunderground_api_key}");
         if ($response->is_success) {
             my $json = decode_json($response->decoded_content);
-            $current = $json->{observations}->[0]->{temp};
+            $current = $json->{observations}->[0]->{temp} // '';
             $Temperature = $current;
             $Condition = "";
             
@@ -382,7 +383,7 @@ sub show_usage {
     print "  - Temperature_mode: F/C (set to C for Celsius, F for Fahrenheit)\n";
     print "  - process_condition: YES/NO (default: YES)\n";
     print "  - use_accuweather: YES/NO (default: YES)\n";
-    print "  - api_Key: Your Weather Underground API key\n";
+    print "  - wunderground_api_key: Your Weather Underground API key\n";
     print "  - cache_enabled: YES/NO (default: YES)\n";
     print "  - cache_duration: Cache duration in seconds (default: 1800)\n";
     exit 1;
@@ -413,11 +414,11 @@ sub fetch_weather {
     }
     
     # Try Wunderground if it's a station ID
-    if ($location_id =~ /^w-(.*)/ && $config{api_Key}) {
+    if ($location_id =~ /^w-(.*)/ && $config{wunderground_api_key}) {
         my $station = uc($1);
         my $ua = LWP::UserAgent->new(connect_timeout => 15);
         my $url = "https://api.weather.com/v2/pws/observations/current?".
-                 "stationId=$station&format=json&units=e&apiKey=$config{api_Key}";
+                 "stationId=$station&format=json&units=e&apiKey=$config{wunderground_api_key}";
         
         my $response = $ua->get($url);
         if ($response->is_success) {
@@ -495,7 +496,7 @@ sub validate_temperature {
 }
 
 # Update error messages to be more descriptive
-if ($location =~ /^w-(.*)/ && !defined $config{api_Key}) {
+if ($location =~ /^w-(.*)/ && !defined $config{wunderground_api_key}) {
     ERROR("Wunderground API key missing in configuration file");
     show_usage();
 }
