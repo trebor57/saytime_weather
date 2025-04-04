@@ -18,8 +18,8 @@ A time and weather announcement system for Asterisk, designed for use with radio
 1. **Install the Package and Dependencies**:
    ```bash
    cd /tmp
-   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.6.2/saytime-weather_2.6.2_all.deb
-   sudo apt install ./saytime-weather_2.6.2_all.deb
+   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.6.3/saytime-weather_2.6.3_all.deb
+   sudo apt install ./saytime-weather_2.6.3_all.deb
    ```
 
 This will:
