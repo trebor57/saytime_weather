@@ -283,7 +283,7 @@ sub get_location_timezone {
         DEBUG("Timezone request failed: " . $response->status_line) if $options{verbose};
     }
     if ($options{verbose}) {
-    WARN("Failed to get timezone, using system local time");
+        WARN("Failed to get timezone, using system local time");
     }
     return 'local';
 }
