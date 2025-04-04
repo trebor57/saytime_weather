@@ -5,11 +5,8 @@ Maintainer: Jory A. Pratt <geekypenguin@gmail.com>
 Build-Depends: debhelper-compat (= 13),
                libtime-piece-perl,
                libjson-perl,
-               liblwp-useragent-perl,
                libconfig-simple-perl,
-               liburi-escape-perl,
-               liblog-log4perl-perl,
-               libcache-filecache-perl
+               liblog-log4perl-perl
 Standards-Version: 4.6.2
 Homepage: https://github.com/w5gle/saytime-weather
 Rules-Requires-Root: no
@@ -23,10 +20,8 @@ Depends: ${perl:Depends},
          libwww-perl,
          libcache-cache-perl,
          libtime-piece-perl,
-         liblwp-useragent-perl,
          libjson-perl,
          libconfig-simple-perl,
-         liburi-escape-perl,
          liblog-log4perl-perl
 Description: Time and weather announcement scripts for Asterisk
  Scripts to announce time and weather conditions through Asterisk.
