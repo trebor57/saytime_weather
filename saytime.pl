@@ -223,7 +223,9 @@ sub get_current_time {
         DEBUG("Getting timezone for location: $location_id") if $options{verbose};
         my ($lat, $long) = get_location_coordinates($location_id);
         unless (defined $lat && defined $long) {
+            if ($options{verbose}) {
             WARN("Coordinates for location ID $location_id are not defined.");
+            }
             return DateTime->now(time_zone => 'local');
         }
         DEBUG("Found coordinates: $lat, $long") if $options{verbose};
@@ -280,8 +282,9 @@ sub get_location_timezone {
     } else {
         DEBUG("Timezone request failed: " . $response->status_line) if $options{verbose};
     }
-    
+    if ($options{verbose}) {
     WARN("Failed to get timezone, using system local time");
+    }
     return 'local';
 }
 
@@ -333,7 +336,9 @@ sub get_coordinates_from_geocoding_api {
     
     my $api_key = $config{"weather.geocode_api_key"};
     unless ($api_key) {
-        WARN("Geocoding API key is not set in the configuration.");
+        if ($options{verbose}) {
+            WARN("Geocoding API key is not set in the configuration.");
+        }
         return (undef, undef);
     }
     
@@ -448,7 +453,9 @@ sub process_weather {
         $files .= format_number($temp, $sound_dir);
         $files .= "$sound_dir/wx/degrees.ulaw ";
     } else {
-        WARN("Temperature file not found: $temp_file");
+        if ($options{verbose}) {
+            WARN("Temperature file not found: $temp_file");
+        }
     }
     
     return $files;
