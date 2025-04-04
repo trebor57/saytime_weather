@@ -35,7 +35,7 @@ use constant {
     ASTERISK_BIN => "/usr/sbin/asterisk",
     DEFAULT_PLAY_METHOD => 'localplay',
     PLAY_DELAY => 5,  # Seconds to wait after playing announcement
-    VERSION => '2.6.2',
+    VERSION => '2.6.3',
     TIMEZONE_API_URL => "http://api.timezonedb.com/v2.1/get-time-zone",
     TIMEZONE_API_KEY => "",  # Would need to be configurable in weather.ini
 };

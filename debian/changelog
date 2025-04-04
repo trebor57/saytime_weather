@@ -1,3 +1,13 @@
+saytime-weather (2.6.3) unstable; urgency=medium
+
+  * Updated version number to `2.6.3`.
+  * Ensured all Perl modules used in saytime.pl and weather.pl are included in Depends.
+  * Updated features in the control file to reflect current capabilities.
+  * Added verbose mode for detailed output and warnings.
+  * Improved error handling and logging for better debugging and user feedback.
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 04 Apr 2025 18:47:00 -0500
+
 saytime-weather (2.6.2) unstable; urgency=medium
 
   * Updated version number to `2.6.2` in `saytime.pl` and `weather.pl`.
