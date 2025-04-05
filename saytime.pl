@@ -35,7 +35,7 @@ use constant {
     ASTERISK_BIN => "/usr/sbin/asterisk",
     DEFAULT_PLAY_METHOD => 'localplay',
     PLAY_DELAY => 5,  # Seconds to wait after playing announcement
-    VERSION => '2.6.3',
+    VERSION => '2.6.4',
     TIMEZONE_API_URL => "http://api.timezonedb.com/v2.1/get-time-zone",
     TIMEZONE_API_KEY => "",  # Would need to be configurable in weather.ini
 };
@@ -53,6 +53,7 @@ my %options = (
     greeting_enabled => DEFAULT_GREETING,
     custom_sound_dir => undef,
     log_file => undef,
+    play_method => 'localplay',  # Default playback method
 );
 
 # Parse command line options
@@ -68,11 +69,11 @@ GetOptions(
     "greeting|g!" => \$options{greeting_enabled},
     "sound-dir=s" => \$options{custom_sound_dir},
     "log=s" => \$options{log_file},
-    "method|m=s" => \$options{play_method},
+    "method|m" => sub { $options{play_method} = 'playback' },  # Set playback if -m is passed
 ) or show_usage();
 
-# Set default only if not specified
-$options{play_method} = DEFAULT_PLAY_METHOD unless defined $options{play_method};
+# Set default playback method if not set
+$options{play_method} //= 'localplay';  # Default to localplay if not set
 
 # Setup logging
 setup_logging();
@@ -490,18 +491,20 @@ sub create_output_file {
     }
 }
 
+# Subroutine to play the announcement
 sub play_announcement {
     my ($node, $asterisk_file) = @_;
     
     # Remove .ulaw extension for Asterisk command
     $asterisk_file =~ s/\.ulaw$//;
-    
+
+    # Check if in test mode and log the command instead of executing
     if ($options{test_mode}) {
         INFO("Test mode - would execute: rpt $options{play_method} $node $asterisk_file");
         return;
     }
     
-    # Both methods use same format: "rpt <method> <node> <file>"
+    # Construct the Asterisk command to play the announcement
     my $asterisk_cmd = sprintf(
         "%s -rx \"rpt %s %s %s\"",
         ASTERISK_BIN,
@@ -509,10 +512,10 @@ sub play_announcement {
         $node,
         $asterisk_file
     );
-    
-    # Keep this line since it's useful for operations
+
     DEBUG("Executing: $asterisk_cmd") if $options{verbose};
-    
+
+    # Execute the command and check for success
     my $asterisk_result = system($asterisk_cmd);
     if ($asterisk_result != 0) {
         my $exit_code = $? >> 8;
@@ -521,7 +524,7 @@ sub play_announcement {
         ERROR("  Command: $asterisk_cmd");
         ERROR("  Exit code: $exit_code");
     }
-    sleep PLAY_DELAY;
+    sleep PLAY_DELAY;  # Wait for a specified delay after playing
 }
 
 sub cleanup_files {
@@ -561,9 +564,7 @@ sub show_usage {
     "  -t, --test              Test sound files before playing (default: off)\n" .
     "  -w, --weather           Enable weather announcements (default: on)\n" .
     "  -g, --greeting          Enable greeting messages (default: on)\n" .
-    "  -m, --method=METHOD     Playback method (default: localplay)\n" .
-    "                          localplay: use local sound device\n" .
-    "                          playback: use Asterisk playback application\n" .
+    "  -m                      Enable playback mode (default: localplay)\n" .
     "      --sound-dir=DIR     Use custom sound directory\n" .
     "                          (default: /usr/share/asterisk/sounds/en)\n" .
     "      --log=FILE          Log to specified file (default: none)\n" .
@@ -571,6 +572,10 @@ sub show_usage {
     "Location ID can be either:\n" .
     "  - 5-digit location code (e.g., 77511)\n" .
     "  - 3-4 letter airport code (e.g., KHOU)\n" .
+    "Examples:\n" .
+    "  perl saytime.pl -l 77511 -n 546054 -m\n" .  # Enables playback to all connected nodes
+    "  perl saytime.pl -l 77511 -n 546054 -s 1\n" .  # Saves time and weather to a file
+    "  perl saytime.pl -l 77511 -n 546054 -h\n" .  # Uses 24-hour format
     "Configuration in /etc/asterisk/local/weather.ini:\n";
     print "  - timezone_api_key: Your TimeZoneDB API key (get from https://timezonedb.com)\n";
     print "  - geocode_api_key: Your Geocoding API key (get from https://opencagedata.com)\n";
