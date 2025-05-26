@@ -1,5 +1,13 @@
 #!/usr/bin/perl
 
+# saytime.pl - Announces the time and weather information.
+# Copyright 2025, Jory A. Pratt, W5GLE
+# Based on original work by D. Crompton, WA3DSP
+#
+# This script retrieves the current time and optionally the weather,
+# then generates a concatenated audio file of the time and weather announcement.
+# It can either play the audio, or save the sound file.
+
 use strict;
 use warnings;
 use File::Spec;
