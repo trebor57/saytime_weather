@@ -16,9 +16,18 @@ A time and weather announcement system for Asterisk, designed for use with radio
 ### From Debian Package
 
 1. **Install the Package and Dependencies**:
+   Goto the temp folder
    ```bash
    cd /tmp
+   ```
+
+   Then we can download the Package:
+   ```
    wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.6.3/saytime-weather_2.6.3_all.deb
+   ```
+
+   Then we can install the dependancies:
+   ```
    sudo apt install ./saytime-weather_2.6.3_all.deb
    ```
 
