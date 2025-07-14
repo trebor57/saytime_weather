@@ -53,7 +53,12 @@ foreach my $config_file (@CONFIG_PATHS) {
         open my $fh, "<", $config_file or next;
         while (my $line = <$fh>) {
             chomp $line;
-            if ($line =~ /^\s*([^=]+)="([^"]*)"/) {
+            $line =~ s/^\s+|\s+$//g; # Trim leading/trailing whitespace
+            next if $line eq '' || $line =~ /^;/; # Skip empty lines and comments
+            next if $line =~ /^\[.*\]$/; # Skip section headers
+            if ($line =~ /^([^=]+?)\s*=\s*"([^"]*)"\s*$/) {
+                $config{$1} = $2;
+            } elsif ($line =~ /^([^=]+?)\s*=\s*([^\"]\S*)\s*$/) {
                 $config{$1} = $2;
             }
         }
