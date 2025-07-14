@@ -105,7 +105,7 @@ saytime.pl -l AIRPORT_CODE -n NODE_NUMBER
 sudo crontab -e
 ```
 ```
-00 03-23 * * * /usr/bin/nice -19 /usr/sbin/saytime.pl -l zipecode-n nodenumber > /dev/null 
+00 03-23 * * * /usr/bin/nice -19 /usr/sbin/saytime.pl -l zipcode-n nodenumber > /dev/null 
 ```
 ## Support
 
