@@ -53,7 +53,7 @@ chmod 755 /usr/sbin/weather.pl
 chmod 644 /usr/share/asterisk/sounds/en/wx/*
 chmod 755 /var/cache/weather
 
-#DEBHELPER#
+
 
 case "$1" in
     configure)

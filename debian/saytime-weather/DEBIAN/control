@@ -1,0 +1,23 @@
+Package: saytime-weather
+Version: 2.6.3
+Architecture: all
+Maintainer: Jory A. Pratt <geekypenguin@gmail.com>
+Installed-Size: 264
+Depends: perl:any, libdatetime-perl, libdatetime-timezone-perl, libwww-perl, libcache-cache-perl, libtime-piece-perl, libjson-perl, libconfig-simple-perl, liblog-log4perl-perl
+Section: hamradio
+Priority: optional
+Homepage: https://github.com/w5gle/saytime-weather
+Description: Time and weather announcement scripts for Asterisk
+ Scripts to announce time and weather conditions through Asterisk.
+ Supports both local and network weather stations, with caching
+ and temperature conversion options. Time announcements support
+ both 12 and 24-hour formats with optional weather reports.
+ .
+ Features include:
+  * Time announcements in 12/24 hour format
+  * Weather conditions from multiple data sources (AccuWeather, Weather Underground)
+  * Support for international airport codes and local zip codes
+  * Configurable caching system for weather data
+  * Comprehensive logging for debugging and monitoring
+  * Custom sound directory support for audio files
+  * Verbose mode for detailed output and warnings

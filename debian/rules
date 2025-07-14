@@ -6,45 +6,8 @@ override_dh_usrlocal:
 	# Skip dh_usrlocal entirely since we handle /usr/local/sbin manually
 
 override_dh_auto_install:
-	dh_auto_install
-	# Create all required directories first
-	install -d debian/saytime-weather/usr/local/sbin
-	install -d debian/saytime-weather/usr/share/asterisk/sounds/en
-	install -d debian/saytime-weather/usr/share/asterisk/sounds/en/wx
-
-	# Install scripts with correct names
-	install -m 755 -o asterisk -g asterisk saytime.pl debian/saytime-weather/usr/local/sbin/
-	install -m 755 -o asterisk -g asterisk weather.pl debian/saytime-weather/usr/local/sbin/
-
-	# Install time-related sound files
-	install -m 644 -o asterisk -g asterisk sounds/a-m.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/
-	install -m 644 -o asterisk -g asterisk sounds/p-m.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/
-
-	# Install weather-related sound files
-	install -m 644 -o asterisk -g asterisk sounds/breezy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/calm.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/clear.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/cloudy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/conditions.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/degrees.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/drizzle.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/foggy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/gusty.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/hail.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/heavy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/light.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/moderate.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/mostly.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/overcast.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/partly.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/rain.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/showers.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/sleet.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/sunny.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/temperature.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/thunderstorms.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/weather.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
-	install -m 644 -o asterisk -g asterisk sounds/windy.ulaw debian/saytime-weather/usr/share/asterisk/sounds/en/wx/
+	make install DESTDIR=$(CURDIR)/debian/saytime-weather
+	make install-sounds DESTDIR=$(CURDIR)/debian/saytime-weather
 
 override_dh_fixperms:
 	dh_fixperms

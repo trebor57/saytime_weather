@@ -1,0 +1,244 @@
+saytime-weather (2.6.3) unstable; urgency=medium
+
+  * Updated version number to `2.6.3`.
+  * Ensured all Perl modules used in saytime.pl and weather.pl are included in Depends.
+  * Updated features in the control file to reflect current capabilities.
+  * Added verbose mode for detailed output and warnings.
+  * Improved error handling and logging for better debugging and user feedback.
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 04 Apr 2025 18:47:00 -0500
+
+saytime-weather (2.6.2) unstable; urgency=medium
+
+  * Updated version number to `2.6.2` in `saytime.pl` and `weather.pl`.
+  * Ensured all variables are defined to prevent undefined values in `weather.pl`.
+  * Updated the Weather Underground API key variable name to `wunderground_api_key` for consistency across files.
+  * Improved error handling and logging for better debugging and user feedback.
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 02 Apr 2025 12:00:00 -0500
+
+saytime-weather (2.6.1) unstable; urgency=medium
+
+  * Initial release of the saytime and weather scripts.
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Sun, 30 Mar 2025 12:00:00 -0500
+
+saytime-weather (2.6.1) unstable; urgency=medium
+
+  * Added timezone handling based on location ID in saytime.pl.
+  * Updated weather.ini to include required API keys for geocoding and timezone.
+  * Removed hvwx support from weather.pl.
+  * Fixed coordinate fetching logic in saytime.pl to ensure accurate location data.
+  * Added necessary dependencies in debian/control for timezone and geocoding support:
+    - libdatetime-perl
+    - libdatetime-timezone-perl
+    - libjson-perl
+    - libwww-perl
+    - libcache-cache-perl
+    - libconfig-simple-perl
+  * Improved error handling and logging throughout the scripts.
+  * Cleaned up debug output for better clarity.
+  * Ensured that the configuration file is created with clear instructions for users.
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>>  Sun, 30 Mar 2025 13:14:00 -0500
+
+saytime-weather (2.6.0) unstable; urgency=medium
+
+  * Updated installation paths for Debian compliance
+    - Scripts now install to /usr/local/sbin
+    - Sound files install to correct Asterisk paths
+  * Fixed script permissions and ownership
+    - Set scripts to root:asterisk ownership
+    - Set sound files to asterisk:asterisk ownership
+  * Improved option handling
+    - Added support for airport codes in location ID
+    - Fixed location ID option conflicts
+    - Removed timezone support for simplicity
+    - Added better validation for all options
+  * Enhanced help text and documentation
+    - Added default values to help output
+    - Improved option descriptions
+    - Updated usage examples
+  * Optimized package dependencies
+    - Removed unused Perl module dependencies
+    - Added only required dependencies:
+      + libtime-piece-perl
+      + liblog-log4perl-perl
+      + libwww-perl
+      + libjson-perl
+      + libcache-cache-perl
+  * Fixed weather script issues
+    - Corrected scalar array reference warnings
+    - Improved temperature file handling
+    - Fixed eval/last issue in weather.pl
+    - Removed unused plocate support
+  * Updated sound file organization
+    - Removed compound condition files
+    - Cleaned up unused sound files
+    - Fixed sound file naming convention
+  * Improved Makefile
+    - Added dependency checking
+    - Updated installation instructions
+    - Fixed file ownership settings
+    - Removed updatedb/locate requirements
+  * Updated copyright year to 2025
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Thu, 28 Mar 2024 23:45:00 -0500
+
+saytime-weather (2.0.0) unstable; urgency=medium
+
+  * Initial release.
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Thu, 28 Mar 2024 23:00:00 -0500
+
+saytime-weather (1.1.9) unstable; urgency=medium
+
+  * Fixed Asterisk command to use localplay correctly
+  * Improved sound file concatenation
+  * Added proper file permissions for concatenated sound file
+  * Removed incorrect dialplan exec command
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:50:00 -0500
+
+saytime-weather (1.1.8) unstable; urgency=medium
+
+  * Fixed Asterisk command construction with proper quoting
+  * Improved sound file validation and error messages
+  * Added file readability checks
+  * Fixed node number format validation (must be 6 digits)
+  * Enhanced error reporting for missing or unreadable files
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:45:00 -0500
+
+saytime-weather (1.1.7) unstable; urgency=medium
+
+  * Fixed Asterisk command construction for sound file playback
+  * Improved command argument handling
+  * Fixed spacing in dialplan exec command
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:40:00 -0500
+
+saytime-weather (1.1.6) unstable; urgency=medium
+
+  * Fixed sound file handling for double-digit minutes
+  * Improved sound file validation for tens and ones
+  * Added proper handling of zero in double-digit numbers
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:35:00 -0500
+
+saytime-weather (1.1.5) unstable; urgency=medium
+
+  * Fixed undefined variable errors in saytime.pl
+  * Simplified time handling code
+  * Removed legacy argument handling
+  * Streamlined sound file handling
+  * Improved code organization and readability
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:30:00 -0500
+
+saytime-weather (1.1.4) unstable; urgency=medium
+
+  * Fixed regex syntax error in saytime.pl
+  * Added validation for required sound files
+  * Improved error handling in file operations
+  * Added Asterisk service status checks
+  * Enhanced security with proper file path escaping
+  * Added proper file permissions handling
+  * Improved cleanup of temporary files
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:20:00 -0500
+
+saytime-weather (1.1.3) unstable; urgency=medium
+
+  * Fixed time parsing error in saytime.pl
+  * Updated installation instructions to use direct package download
+  * Improved error handling in time announcements
+  * Fixed repository URL in documentation
+  * Added proper timezone handling in saytime.pl
+  * Enhanced logging for time announcements
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 20 Mar 2024 12:00:00 -0500
+
+saytime-weather (1.1.2) unstable; urgency=medium
+
+  * Fixed dependency package names:
+    - Changed libtime-zone-perl to libtime-local-perl
+    - Changed libcache-filecache-perl to libcache-cache-perl
+  * Added missing URI::Escape dependency (liburi-perl)
+  * Simplified dependency checks in Makefile
+  * Updated package description and section
+  * Removed debugging information from weather.pl
+  * Improved error messages for better user experience
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 20 Mar 2024 12:00:00 -0500
+
+saytime-weather (1.1.1) unstable; urgency=medium
+
+  * Added Weather Underground API support for international airport codes
+  * Added configurable weather data source selection
+  * Improved error handling and logging
+  * Updated documentation with API setup instructions
+  * Added examples for different location ID types
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 19 Mar 2024 12:00:00 -0500
+
+saytime-weather (1.1.0) unstable; urgency=medium
+
+  * Added new Perl module dependencies:
+    - libtime-piece-perl for time handling
+    - libtime-zone-perl for timezone support
+    - liblog-log4perl-perl for logging
+    - libcache-filecache-perl for weather data caching
+  * Enhanced error handling and logging in both scripts
+  * Added timezone support in saytime.pl
+  * Improved weather data caching in weather.pl
+  * Added support for legacy command line arguments
+  * Added dry-run and test modes
+  * Added custom sound directory support
+  * Added configuration file support for weather.pl
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 18 Mar 2024 12:00:00 -0500
+
+saytime-weather (1.0.1) unstable; urgency=medium
+
+  * Fixed sound file installation permissions
+  * Added error handling for missing sound files
+  * Updated documentation with troubleshooting steps
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 17 Mar 2024 12:00:00 -0500
+
+saytime-weather (1.0.0) unstable; urgency=medium
+
+  * Initial release
+  * Basic time and weather announcement functionality
+  * Support for ZIP codes and airport codes
+  * Simple caching mechanism
+  * Basic logging support
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 16 Mar 2024 12:00:00 -0500
+
+saytime-weather (1.1.10) unstable; urgency=medium
+
+  * Fixed Asterisk command to use correct rpt localplay format with node number
+  * Updated command to use full path to asterisk binary
+  * Fixed command quoting for proper shell execution
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 21:55:00 -0500
+
+saytime-weather (1.1.11) unstable; urgency=medium
+
+  * Fixed sound file concatenation to include greeting and "the time is" announcement
+  * Added proper time-based greeting selection (good morning/afternoon/evening)
+  * Improved sound file validation for all required sound files
+  * Fixed order of sound file concatenation for proper announcement flow
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:00:00 -0500
+
+saytime-weather (1.1.12) unstable; urgency=medium
+
+  * Fixed get_sound_file function to handle non-numeric sound files
+  * Added proper handling of greeting and "the time is" sound files
+  * Improved error messages for missing sound files
+  * Fixed sound file path construction for special announcements
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Fri, 22 Mar 2024 22:05:00 -0500 

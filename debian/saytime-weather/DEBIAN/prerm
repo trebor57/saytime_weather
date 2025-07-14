@@ -23,6 +23,6 @@ fi
 
 # Other pre-removal tasks can go here
 
-#DEBHELPER#
+
 
 exit 0 

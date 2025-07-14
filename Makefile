@@ -1,5 +1,5 @@
 # Installation directories
-INSTALL_DIR = /usr/local/sbin
+INSTALL_DIR = /usr/sbin
 SOUNDS_DIR = /usr/share/asterisk/sounds/en
 WX_SOUNDS_DIR = $(SOUNDS_DIR)/wx
 
@@ -10,7 +10,7 @@ WX_SOUNDS = $(wildcard sounds/*.ulaw)
 WX_SOUNDS := $(filter-out sounds/a-m.ulaw sounds/p-m.ulaw, $(WX_SOUNDS))
 
 # Default target
-all: install
+all: check-deps
 
 # Check dependencies
 check-deps:
@@ -25,9 +25,9 @@ check-deps:
 # Install scripts
 install: check-deps
 	@echo "Installing scripts to $(INSTALL_DIR)..."
+	@mkdir -p $(DESTDIR)$(INSTALL_DIR)
 	@for script in $(SCRIPTS); do \
-		install -m 755 $$script $(INSTALL_DIR)/; \
-		chown root:asterisk $(INSTALL_DIR)/$$script; \
+		install -m 755 $$script $(DESTDIR)$(INSTALL_DIR)/; \
 	done
 	@echo "Script installation complete."
 	@echo ""
@@ -35,21 +35,19 @@ install: check-deps
 	@echo "To setup automatic time announcements, add the following to root's crontab:"
 	@echo "Run: sudo crontab -e"
 	@echo "Add the line (modify time/location/node as needed):"
-	@echo "00 07-23 * * * /usr/bin/nice -19 /usr/local/sbin/saytime.pl -l 77511 -n 546054 > /dev/null"
+	@echo "00 07-23 * * * /usr/bin/nice -19 /usr/sbin/saytime.pl -l 77511 -n 546054 > /dev/null"
 	@echo "This will announce time and weather hourly from 7AM to 11PM"
 	@echo "=====================================\n"
 
 # Install sound files
 install-sounds: check-deps
 	@echo "Installing sound files..."
-	@mkdir -p $(WX_SOUNDS_DIR)
+	@mkdir -p $(DESTDIR)$(WX_SOUNDS_DIR)
 	@for sound in $(TIME_SOUNDS); do \
-		install -m 644 sounds/$$sound $(SOUNDS_DIR)/; \
-		chown asterisk:asterisk $(SOUNDS_DIR)/$$sound; \
+		install -m 644 sounds/$$sound $(DESTDIR)$(SOUNDS_DIR)/; \
 	done
 	@for sound in $(WX_SOUNDS); do \
-		install -m 644 $$sound $(WX_SOUNDS_DIR)/; \
-		chown asterisk:asterisk $(WX_SOUNDS_DIR)/$$(basename $$sound); \
+		install -m 644 $$sound $(DESTDIR)$(WX_SOUNDS_DIR)/; \
 	done
 	@echo "Sound files installation complete."
 	@if [ -x /usr/bin/updatedb ]; then \
