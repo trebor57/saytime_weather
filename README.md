@@ -23,12 +23,12 @@ A time and weather announcement system for Asterisk, designed for use with radio
 
    Then we can download the Package:
    ```
-   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.6.3/saytime-weather_2.6.3_all.deb
+   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.6.4/saytime-weather_2.6.4_all.deb
    ```
 
    Then we can install the dependancies:
    ```
-   sudo apt install ./saytime-weather_2.6.3_all.deb
+   sudo apt install ./saytime-weather_2.6.4_all.deb
    ```
 
    This will:
