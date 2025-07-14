@@ -95,11 +95,18 @@ saytime.pl -l AIRPORT_CODE -n NODE_NUMBER
 
 ## Files
 
-- `/usr/local/sbin/saytime`               Main announcement script
-- `/usr/local/sbin/weather`               Weather retrieval script
+- `/usr/sbin/saytime`               Main announcement script
+- `/usr/sbin/weather`               Weather retrieval script
 - `/etc/asterisk/local/weather.ini`       Weather configuration
 - `/usr/share/asterisk/sounds/en/wx/`     Weather sound files
 
+## Crontab example
+```
+sudo crontab -e
+```
+```
+00 03-23 * * * /usr/bin/nice -19 /usr/sbin/saytime.pl -l zipecode-n nodenumber > /dev/null 
+```
 ## Support
 
 For issues or feature requests, visit:
