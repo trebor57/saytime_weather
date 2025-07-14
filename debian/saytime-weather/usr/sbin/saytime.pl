@@ -23,7 +23,7 @@ use URI::Escape;
 use constant {
     TMP_DIR => "/tmp",
     BASE_SOUND_DIR => "/usr/share/asterisk/sounds/en",
-    WEATHER_SCRIPT => "/usr/local/sbin/weather.pl",
+    WEATHER_SCRIPT => "/usr/sbin/weather.pl",
     DEFAULT_VERBOSE => 0,
     DEFAULT_DRY_RUN => 0,
     DEFAULT_TEST_MODE => 0,
