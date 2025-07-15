@@ -1,3 +1,9 @@
+saytime-weather (2.6.5) unstable; urgency=medium
+
+  * Fix AeroDataBox timezone parsing: use 'timeZone' key from API response
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Mon, 14 Jul 2025 22:15:00 +0000
+
 saytime-weather (2.6.4) unstable; urgency=medium
 
   * Install path fixes: scripts now install to /usr/sbin

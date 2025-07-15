@@ -1,8 +1,8 @@
 Package: saytime-weather
-Version: 2.6.4
+Version: 2.6.5
 Architecture: all
 Maintainer: Jory A. Pratt <geekypenguin@gmail.com>
-Installed-Size: 264
+Installed-Size: 267
 Depends: perl:any, libdatetime-perl, libdatetime-timezone-perl, libwww-perl, libcache-cache-perl, libtime-piece-perl, libjson-perl, libconfig-simple-perl, liblog-log4perl-perl
 Section: hamradio
 Priority: optional

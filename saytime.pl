@@ -36,7 +36,7 @@ use constant {
     ASTERISK_BIN => "/usr/sbin/asterisk",
     DEFAULT_PLAY_METHOD => 'localplay',
     PLAY_DELAY => 5,
-    VERSION => '2.6.4',
+    VERSION => '2.6.5',
     TIMEZONE_API_URL => "http://api.timezonedb.com/v2.1/get-time-zone",
 };
 

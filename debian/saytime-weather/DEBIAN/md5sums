@@ -1,4 +1,4 @@
-fffb9ac55ceff28357553db215bf5d9f  usr/sbin/saytime.pl
+d2292506ce0870489c3c9ccfeb331ea4  usr/sbin/saytime.pl
 fd975531b2a4078f49c1ce317e9b9e6a  usr/sbin/weather.pl
 f1af0a26997fbed24c3eb9120e3243c2  usr/share/asterisk/sounds/en/a-m.ulaw
 0ce4ee8a584841214bc094ca007cf673  usr/share/asterisk/sounds/en/p-m.ulaw
@@ -26,5 +26,5 @@ edd01a5574f370a59f3a8220149a481c  usr/share/asterisk/sounds/en/wx/showers.ulaw
 bde0a35eb1c7df55d3ce17d7d2f09b23  usr/share/asterisk/sounds/en/wx/thunderstorms.ulaw
 81fa70e1c40421c826b9675611dbd495  usr/share/asterisk/sounds/en/wx/weather.ulaw
 f40873418a31b1684e13fe683ea9443f  usr/share/asterisk/sounds/en/wx/windy.ulaw
-cfab35e66533510b69a2d20bdca1e072  usr/share/doc/saytime-weather/changelog.gz
+4393df9ce548c261b5ccfb65e07c10ec  usr/share/doc/saytime-weather/changelog.gz
 19ba0f2beb9dd8da7065123f7c22e737  usr/share/doc/saytime-weather/copyright
