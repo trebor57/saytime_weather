@@ -15,6 +15,9 @@ use JSON;
 use Encode qw(decode);
 use Cache::FileCache;
 use File::Spec;
+use HTTP::Request;
+use HTTP::Response;
+use HTTP::Headers;
 
 # Define paths at the top of the script
 my @CONFIG_PATHS = (
@@ -103,6 +106,7 @@ $config{wunderground_api_key} = "" unless defined $config{wunderground_api_key};
 $config{use_accuweather} = "YES" unless defined $config{use_accuweather};
 $config{cache_enabled} = "YES" unless defined $config{cache_enabled};
 $config{cache_duration} = "1800" unless defined $config{cache_duration};  # 30 minutes default
+$config{aerodatabox_rapidapi_key} = "" unless defined $config{aerodatabox_rapidapi_key};
 
 # Initialize cache if enabled
 my $cache;
@@ -182,6 +186,16 @@ if ($config{cache_enabled} eq "YES" && defined $cache) {
 
 # If no cached data, fetch from API
 if (not defined $current or $current eq "") {
+    # AeroDataBox support for airport codes
+    if ($location =~ /^[A-Z]{3,4}$/i) {
+        my ($lat, $lon, $tz) = get_airport_info_aerodatabox($location);
+        if (defined $lat && defined $lon) {
+            print "[DEBUG] AeroDataBox: Found lat=$lat, lon=$lon, timezone=$tz\n" if $options{verbose};
+            # In the future, you can use $lat/$lon for more accurate weather APIs
+        } else {
+            print "[WARN] AeroDataBox lookup failed for airport code $location. Falling back to AccuWeather/geocoding.\n";
+        }
+    }
     if ($location =~ /^w-(.*)/) {
         if (not defined $config{wunderground_api_key} or $config{wunderground_api_key} eq "") {
             print "\nwunderground api key missing\n";
@@ -526,3 +540,48 @@ sub validate_config {
 
 # Call validation after loading config
 validate_config();
+
+# AeroDataBox lookup function (copied from saytime.pl)
+sub get_airport_info_aerodatabox {
+    my ($code) = @_;
+    my $api_key = $config{"aerodatabox_rapidapi_key"};
+    unless ($api_key && $code) {
+        print "[WARN] AeroDataBox RapidAPI key is missing or code is undefined. Skipping AeroDataBox lookup.\n";
+        return;
+    }
+    my $ua = LWP::UserAgent->new(timeout => 10);
+    my $host = 'aerodatabox.p.rapidapi.com';
+    my $url;
+    $code = uc($code);
+    if ($code =~ /^[A-Z]{3}$/) {
+        $url = "https://$host/airports/iata/$code";
+    } elsif ($code =~ /^[A-Z]{4}$/) {
+        $url = "https://$host/airports/icao/$code";
+    } else {
+        print "[WARN] Code $code is not a valid IATA or ICAO code for AeroDataBox lookup.\n";
+        return;
+    }
+    print "[DEBUG] AeroDataBox: Using API key: $api_key\n" if $options{verbose};
+    print "[DEBUG] AeroDataBox: Fetching URL: $url\n" if $options{verbose};
+    my $req = HTTP::Request->new(GET => $url);
+    $req->header('X-RapidAPI-Key' => $api_key);
+    $req->header('X-RapidAPI-Host' => $host);
+    my $resp = $ua->request($req);
+    if ($resp->is_success) {
+        print "[DEBUG] AeroDataBox: Response: " . $resp->decoded_content . "\n" if $options{verbose};
+        my $data = eval { decode_json($resp->decoded_content) };
+        if ($@) {
+            print "[WARN] AeroDataBox: Failed to parse JSON response: $@\n";
+            return;
+        }
+        if ($data && $data->{location} && $data->{location}->{lat} && $data->{location}->{lon} && $data->{timeZone}) {
+            print "[DEBUG] AeroDataBox: Parsed lat=$data->{location}->{lat}, lon=$data->{location}->{lon}, timezone=$data->{timeZone}\n" if $options{verbose};
+            return ($data->{location}->{lat}, $data->{location}->{lon}, $data->{timeZone});
+        } else {
+            print "[WARN] AeroDataBox: Incomplete data in response for code $code\n";
+        }
+    } else {
+        print "[WARN] AeroDataBox: API request failed for $code: " . $resp->status_line . "\n";
+    }
+    return;
+}
