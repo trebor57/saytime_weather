@@ -343,9 +343,9 @@ sub get_airport_info_aerodatabox {
             Log::Log4perl::get_logger()->warn("AeroDataBox: Failed to parse JSON response: $@");
             return;
         }
-        if ($data && $data->{location} && $data->{location}->{lat} && $data->{location}->{lon} && $data->{timezone}) {
-            DEBUG("AeroDataBox: Parsed lat=$data->{location}->{lat}, lon=$data->{location}->{lon}, timezone=$data->{timezone}");
-            return ($data->{location}->{lat}, $data->{location}->{lon}, $data->{timezone});
+        if ($data && $data->{location} && $data->{location}->{lat} && $data->{location}->{lon} && $data->{timeZone}) {
+            DEBUG("AeroDataBox: Parsed lat=$data->{location}->{lat}, lon=$data->{location}->{lon}, timezone=$data->{timeZone}");
+            return ($data->{location}->{lat}, $data->{location}->{lon}, $data->{timeZone});
         } else {
             Log::Log4perl::get_logger()->warn("AeroDataBox: Incomplete data in response for code $code");
         }
