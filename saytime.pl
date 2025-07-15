@@ -275,6 +275,8 @@ sub get_location_coordinates {
         if (defined $lat && defined $lon) {
             $options{_airport_timezone} = $tz if $tz;
             return ($lat, $lon);
+        } else {
+            Log::Log4perl::get_logger()->warn("AeroDataBox lookup failed for airport code $location_id. Falling back to AccuWeather/geocoding.");
         }
     }
 
@@ -313,7 +315,10 @@ sub get_location_coordinates {
 sub get_airport_info_aerodatabox {
     my ($code) = @_;
     my $api_key = $config{"weather.aerodatabox_rapidapi_key"};
-    return unless $api_key && $code;
+    unless ($api_key && $code) {
+        Log::Log4perl::get_logger()->warn("AeroDataBox RapidAPI key is missing or code is undefined. Skipping AeroDataBox lookup.");
+        return;
+    }
     my $ua = LWP::UserAgent->new(timeout => 10);
     my $host = 'aerodatabox.p.rapidapi.com';
     my $url;
@@ -322,17 +327,30 @@ sub get_airport_info_aerodatabox {
     } elsif ($code =~ /^[A-Z]{4}$/) {
         $url = "https://$host/airports/icao/$code";
     } else {
+        Log::Log4perl::get_logger()->warn("Code $code is not a valid IATA or ICAO code for AeroDataBox lookup.");
         return;
     }
+    DEBUG("AeroDataBox: Using API key: $api_key");
+    DEBUG("AeroDataBox: Fetching URL: $url");
     my $req = HTTP::Request->new(GET => $url);
     $req->header('X-RapidAPI-Key' => $api_key);
     $req->header('X-RapidAPI-Host' => $host);
     my $resp = $ua->request($req);
     if ($resp->is_success) {
+        DEBUG("AeroDataBox: Response: " . $resp->decoded_content);
         my $data = eval { decode_json($resp->decoded_content) };
-        if ($data && $data->{location} && $data->{location}->{lat} && $data->{location}->{lon} && $data->{timezone}) {
-            return ($data->{location}->{lat}, $data->{location}->{lon}, $data->{timezone});
+        if ($@) {
+            Log::Log4perl::get_logger()->warn("AeroDataBox: Failed to parse JSON response: $@");
+            return;
         }
+        if ($data && $data->{location} && $data->{location}->{lat} && $data->{location}->{lon} && $data->{timezone}) {
+            DEBUG("AeroDataBox: Parsed lat=$data->{location}->{lat}, lon=$data->{location}->{lon}, timezone=$data->{timezone}");
+            return ($data->{location}->{lat}, $data->{location}->{lon}, $data->{timezone});
+        } else {
+            Log::Log4perl::get_logger()->warn("AeroDataBox: Incomplete data in response for code $code");
+        }
+    } else {
+        Log::Log4perl::get_logger()->warn("AeroDataBox: API request failed for $code: " . $resp->status_line);
     }
     return;
 }
