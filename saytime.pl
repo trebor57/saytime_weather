@@ -101,10 +101,14 @@ validate_options();
 
 my $critical_error_occurred = 0;
 
+# Process weather FIRST so timezone file is created before getting time
+# This ensures time matches the weather location timezone
+my $weather_sound_files = process_weather($options{location_id});
+
+# Now get time (will use timezone from weather.pl if available)
 my $now = get_current_time($options{location_id});
 
 my $time_sound_files = process_time($now, $options{use_24hour});
-my $weather_sound_files = process_weather($options{location_id});
 
 my $output_file = File::Spec->catfile(TMP_DIR, "current-time.ulaw");
 my $final_sound_files = combine_sound_files($time_sound_files, $weather_sound_files);
