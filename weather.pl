@@ -475,6 +475,24 @@ sub postal_to_coordinates {
     
     DEBUG("Converting postal code $postal to coordinates...") if $options{verbose};
     
+    # Special locations without postal codes (Antarctica, remote areas)
+    my %special_locations = (
+        'SOUTHPOLE' => [-90.0, 0.0, 'South Pole Station, Antarctica'],
+        'MCMURDO'   => [-77.85, 166.67, 'McMurdo Station, Antarctica'],
+        'PALMER'    => [-64.77, -64.05, 'Palmer Station, Antarctica'],
+        'VOSTOK'    => [-78.46, 106.84, 'Vostok Station, Antarctica'],
+    );
+    
+    my $postal_uc = uc($postal);
+    $postal_uc =~ s/[^A-Z0-9]//g;  # Remove spaces/special chars
+    
+    if (exists $special_locations{$postal_uc}) {
+        my ($lat, $lon, $name) = @{$special_locations{$postal_uc}};
+        DEBUG("  Special location: $name") if $options{verbose};
+        DEBUG("  Coordinates: $lat, $lon") if $options{verbose};
+        return ($lat, $lon);
+    }
+    
     my $ua = LWP::UserAgent->new(timeout => 10);
     $ua->agent('Mozilla/5.0 (compatible; WeatherBot/1.0; +https://github.com/w5gle/saytime-weather)');
     
