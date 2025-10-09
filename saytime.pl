@@ -176,24 +176,27 @@ sub get_current_time {
     my $timezone_file = File::Spec->catfile(TMP_DIR, "timezone");
     
     if (defined $location_id && -f $timezone_file) {
+        my $timezone;
         eval {
             open my $tz_fh, '<', $timezone_file or die "Cannot open timezone file: $!";
-            chomp(my $timezone = <$tz_fh>);
+            chomp($timezone = <$tz_fh>);
             close $tz_fh;
-            
-            if ($timezone && $timezone ne '') {
-                DEBUG("Using timezone from weather location: $timezone") if $options{verbose};
-                my $dt = DateTime->now;
-                eval { $dt->set_time_zone($timezone); };
-                if ($@) {
-                    DEBUG("Invalid timezone '$timezone', falling back to local") if $options{verbose};
-                    return DateTime->now(time_zone => 'local');
-                }
-                DEBUG("Current time in $timezone: " . $dt->hms) if $options{verbose};
-                return $dt;
-            }
         };
-        if ($@) {
+        
+        if (!$@ && $timezone && $timezone ne '') {
+            DEBUG("Using timezone from weather location: $timezone") if $options{verbose};
+            my $dt = DateTime->now;
+            my $tz_error;
+            eval { $dt->set_time_zone($timezone); };
+            $tz_error = $@;
+            
+            if ($tz_error) {
+                DEBUG("Invalid timezone '$timezone', falling back to local") if $options{verbose};
+            } else {
+                DEBUG("Current time in $timezone: " . $dt->hms) if $options{verbose};
+                return $dt;  # Return from function, not just eval
+            }
+        } elsif ($@) {
             DEBUG("Failed to read timezone file: $@") if $options{verbose};
         }
     }
