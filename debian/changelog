@@ -1,3 +1,25 @@
+saytime-weather (2.7.0) unstable; urgency=medium
+
+  * CRITICAL: Replaced discontinued AccuWeather RSS with Open-Meteo API
+  * Major simplification: Removed all API key dependencies
+  * Removed Weather Underground, AeroDataBox, TimeZoneDB, OpenCage APIs
+  * Added Nominatim/OpenStreetMap geocoding (free, no API key)
+  * Added Open-Meteo weather data (free, no API key)
+  * Implemented automatic timezone detection from weather location
+  * Time now matches weather location timezone (not repeater timezone)
+  * Added worldwide postal code support (US, Canada, Europe, etc.)
+  * Added Canadian postal code FSA mapping for better coverage
+  * Simplified saytime.pl: 645→434 lines (33% reduction)
+  * Simplified weather.pl: 718→685 lines (5% reduction)
+  * Removed 4 API key configuration requirements
+  * Enhanced error handling and logging (quiet by default, verbose with -v)
+  * No API keys required - fully functional out of the box!
+  * Configuration simplified from 10 fields to 4 essential fields
+  * Improved memory efficiency with chunked binary file reading
+  * Better weather condition matching with duplicate prevention
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 08 Oct 2025 20:47:46 -0500
+
 saytime-weather (2.6.6) unstable; urgency=medium
 
   * AeroDataBox fixes and debug logging improvements

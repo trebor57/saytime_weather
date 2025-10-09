@@ -3,7 +3,6 @@ Section: hamradio
 Priority: optional
 Maintainer: Jory A. Pratt <geekypenguin@gmail.com>
 Build-Depends: debhelper-compat (= 13),
-               libtime-piece-perl,
                libjson-perl,
                libconfig-simple-perl,
                liblog-log4perl-perl
@@ -19,21 +18,24 @@ Depends: ${perl:Depends},
          libdatetime-timezone-perl,
          libwww-perl,
          libcache-cache-perl,
-         libtime-piece-perl,
          libjson-perl,
          libconfig-simple-perl,
-         liblog-log4perl-perl
+         liblog-log4perl-perl,
+         perl
 Description: Time and weather announcement scripts for Asterisk
  Scripts to announce time and weather conditions through Asterisk.
- Supports both local and network weather stations, with caching
- and temperature conversion options. Time announcements support
- both 12 and 24-hour formats with optional weather reports.
+ Uses free Open-Meteo API for worldwide weather data with automatic
+ timezone detection. No API keys required! Works with any postal code
+ globally. Time announcements support both 12 and 24-hour formats.
  .
  Features include:
-  * Time announcements in 12/24 hour format
-  * Weather conditions from multiple data sources (AccuWeather, Weather Underground)
-  * Support for international airport codes and local zip codes
-  * Configurable caching system for weather data
-  * Comprehensive logging for debugging and monitoring
+  * Time announcements in 12/24 hour format with location-aware timezone
+  * Worldwide weather support via Open-Meteo API (free, no API key)
+  * Automatic geocoding via Nominatim/OpenStreetMap (free)
+  * Support for postal codes worldwide (US, Canada, Europe, etc.)
+  * Automatic timezone detection matching weather location
+  * Configurable caching system for fast repeated lookups
+  * Comprehensive logging (quiet by default, verbose with -v)
   * Custom sound directory support for audio files
-  * Verbose mode for detailed output and warnings 
+  * Zero configuration required - works out of the box!
+  * Simplified from 1363 to 1044 lines of code (23% reduction) 

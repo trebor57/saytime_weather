@@ -15,13 +15,7 @@ use Getopt::Long;
 use Log::Log4perl qw(:easy);
 use DateTime;
 use DateTime::TimeZone;
-use LWP::UserAgent;
-use JSON;
 use Config::Simple;
-use URI::Escape;
-use HTTP::Request;
-use HTTP::Response;
-use HTTP::Headers;
 
 use constant {
     TMP_DIR => "/tmp",
@@ -36,8 +30,7 @@ use constant {
     ASTERISK_BIN => "/usr/sbin/asterisk",
     DEFAULT_PLAY_METHOD => 'localplay',
     PLAY_DELAY => 5,
-    VERSION => '2.6.6',
-    TIMEZONE_API_URL => "http://api.timezonedb.com/v2.1/get-time-zone",
+    VERSION => '2.7.0',
 };
 
 my %options = (
@@ -92,21 +85,6 @@ process_condition = YES
 ; Temperature display mode (F for Fahrenheit, C for Celsius)
 Temperature_mode = F
 
-; Weather data sources
-use_accuweather = YES
-
-; Weather Underground API key (if using Wunderground stations)
-wunderground_api_key = 
-
-; TimeZoneDB API key for timezone lookup (get free key from https://timezonedb.com)
-timezone_api_key = 
-
-; Geocoding API key for location coordinates (get free key from https://opencagedata.com)
-geocode_api_key = 
-
-; AeroDataBox RapidAPI key for airport lookups (get from https://rapidapi.com/aerodatabox/api/aerodatabox)
-aerodatabox_rapidapi_key = 
-
 ; Cache settings
 cache_enabled = YES
 cache_duration = 1800
@@ -116,11 +94,8 @@ EOT
         or die "Cannot set permissions on $config_file: $!";
 }
 
-$config{"weather.wunderground_api_key"} ||= "";
-$config{"weather.timezone_api_key"} ||= "";
-$config{"weather.geocode_api_key"} ||= "";
-$config{"weather.aerodatabox_rapidapi_key"} ||= "";
-$config{"weather.use_accuweather"} ||= "YES";
+$config{"weather.Temperature_mode"} ||= "F";
+$config{"weather.process_condition"} ||= "YES";
 
 validate_options();
 
@@ -154,10 +129,13 @@ if ($options{silent} == 0) {
 exit $critical_error_occurred;
 
 sub setup_logging {
-    my $log_level = $options{verbose} ? $DEBUG : $INFO;
+    # In non-verbose mode: only show ERROR level with simple format
+    # In verbose mode: show everything (DEBUG level) with full format
+    my $log_level = $options{verbose} ? $DEBUG : $ERROR;
+    my $layout = $options{verbose} ? '%d [%p] %m%n' : '%m%n';
     my %log_params = (
         level  => $log_level,
-        layout => '%d [%p] %m%n'
+        layout => $layout
     );
     $log_params{file} = ">>$options{log_file}" if $options{log_file};
     Log::Log4perl->easy_init(\%log_params);
@@ -177,14 +155,7 @@ sub validate_options {
     die "Invalid silent value: $options{silent}\n" if $options{silent} < 0 || $options{silent} > 2;
     
     if ($options{weather_enabled} && !defined $options{location_id}) {
-        die "Location ID is required when weather is enabled\n";
-    }
-    
-    if (defined $options{location_id} && 
-        $options{location_id} !~ /^\d{5}$/ &&
-        $options{location_id} !~ /^[A-Z]{3,4}$/
-    ) {
-        die "Invalid location ID format: $options{location_id} (must be 5 digits or 3-4 letter airport code)\n";
+        die "Location ID (postal code) is required when weather is enabled\n";
     }
     
     if ($options{custom_sound_dir}) {
@@ -196,196 +167,41 @@ sub validate_options {
 sub get_current_time {
     my ($location_id) = @_;
     
-    if (defined $location_id) {
-        DEBUG("Getting timezone for location: $location_id") if $options{verbose};
-        my ($lat, $long) = get_location_coordinates($location_id);
-        unless (defined $lat && defined $long) {
-            Log::Log4perl::get_logger()->warn("Coordinates for location ID $location_id are not defined. Falling back to local time.");
-            return DateTime->now(time_zone => 'local');
+    # Check if weather.pl saved a timezone file (from Open-Meteo)
+    # This makes the time match the weather location
+    my $timezone_file = File::Spec->catfile(TMP_DIR, "timezone");
+    
+    if (defined $location_id && -f $timezone_file) {
+        eval {
+            open my $tz_fh, '<', $timezone_file or die "Cannot open timezone file: $!";
+            chomp(my $timezone = <$tz_fh>);
+            close $tz_fh;
+            
+            if ($timezone && $timezone ne '') {
+                DEBUG("Using timezone from weather location: $timezone") if $options{verbose};
+                my $dt = DateTime->now;
+                eval { $dt->set_time_zone($timezone); };
+                if ($@) {
+                    DEBUG("Invalid timezone '$timezone', falling back to local") if $options{verbose};
+                    return DateTime->now(time_zone => 'local');
+                }
+                DEBUG("Current time in $timezone: " . $dt->hms) if $options{verbose};
+                return $dt;
+            }
+        };
+        if ($@) {
+            DEBUG("Failed to read timezone file: $@") if $options{verbose};
         }
-        DEBUG("Found coordinates: $lat, $long") if $options{verbose};
-        my $timezone = get_location_timezone($lat, $long);
-        if ($timezone ne 'local') {
-            DEBUG("Using timezone: $timezone") if $options{verbose};
-            my $dt = DateTime->now;
-            $dt->set_time_zone($timezone);
-            DEBUG("Time in $timezone: " . $dt->hms) if $options{verbose};
-            return $dt;
-        }
-        Log::Log4perl::get_logger()->warn("Timezone lookup failed for $lat, $long. Falling back to local time.");
     }
     
+    # Fall back to system local time
     DEBUG("Using system local time") if $options{verbose};
     return DateTime->now(time_zone => 'local');
 }
 
-sub get_location_timezone {
-    my ($lat, $long) = @_;
-    if (exists $options{_airport_timezone} && $options{_airport_timezone}) {
-        my $tz = $options{_airport_timezone};
-        delete $options{_airport_timezone};
-        return $tz;
-    }
-    return 'local' unless defined $lat && defined $long;
-    
-    DEBUG("Getting timezone for coordinates: $lat, $long") if $options{verbose};
-    
-    my $api_key = $config{"weather.timezone_api_key"};
-    if (!$api_key) {
-        Log::Log4perl::get_logger()->warn("No timezone API key configured. Falling back to local time.");
-        return 'local';
-    }
-    
-    my $ua = LWP::UserAgent->new(timeout => 10);
-    my $url = sprintf(
-        "%s?key=%s&format=json&by=position&lat=%s&lng=%s",
-        TIMEZONE_API_URL,
-        $api_key,
-        $lat,
-        $long
-    );
-    
-    DEBUG("Fetching timezone URL: $url") if $options{verbose};
-    
-    my $response = $ua->get($url);
-    if ($response->is_success) {
-        my $data = decode_json($response->content);
-        DEBUG("Got timezone response: " . $response->content) if $options{verbose};
-        if ($data->{status} eq 'OK') {
-            DEBUG("Found timezone: $data->{zoneName}") if $options{verbose};
-            return $data->{zoneName};
-        }
-        DEBUG("Invalid timezone response status: $data->{status}") if $options{verbose};
-    } else {
-        DEBUG("Timezone request failed: " . $response->status_line) if $options{verbose};
-    }
-    Log::Log4perl::get_logger()->warn("Failed to get timezone from API, using system local time");
-    return 'local';
-}
-
-sub get_location_coordinates {
-    my ($location_id) = @_;
-    return (undef, undef) unless defined $location_id;
-    
-    DEBUG("Getting coordinates for location: $location_id") if $options{verbose};
-    
-    # Use AeroDataBox for airport codes
-    if ($location_id =~ /^[A-Z]{3,4}$/) {
-        my ($lat, $lon, $tz) = get_airport_info_aerodatabox($location_id);
-        if (defined $lat && defined $lon) {
-            $options{_airport_timezone} = $tz if $tz;
-            return ($lat, $lon);
-        } else {
-            Log::Log4perl::get_logger()->warn("AeroDataBox lookup failed for airport code $location_id. Falling back to AccuWeather/geocoding.");
-        }
-    }
-
-    if ($config{"weather.use_accuweather"} eq "YES") {
-        my $ua = LWP::UserAgent->new(timeout => 10);
-        my $url = "https://rss.accuweather.com/rss/liveweather_rss.asp?locCode=$location_id";
-        DEBUG("Fetching AccuWeather URL: $url") if $options{verbose};
-        
-        my $response = $ua->get($url);
-        if ($response->is_success) {
-            my $content = $response->decoded_content;
-            DEBUG("Got AccuWeather response:\n$content") if $options{verbose};
-            
-            if ($content =~ m{<title>([^,]+),\s*([A-Z]{2}) - AccuWeather\.com Forecast</title>}i) {
-                my $city = $1;
-                my $state = $2;
-                DEBUG("Found location: $city, $state") if $options{verbose};
-                
-                my $location_name = "$city, $state";
-                DEBUG("Using cleaned location name for geocoding: $location_name") if $options{verbose};
-                
-                return get_coordinates_from_geocoding_api($location_name);
-            } else {
-                DEBUG("Could not find location name in AccuWeather response") if $options{verbose};
-            }
-        } else {
-            DEBUG("AccuWeather request failed: " . $response->status_line) if $options{verbose};
-            Log::Log4perl::get_logger()->warn("AccuWeather request failed: " . $response->status_line);
-        }
-    }
-    
-    Log::Log4perl::get_logger()->warn("Failed to get coordinates for location: $location_id");
-    return (undef, undef);
-}
-
-sub get_airport_info_aerodatabox {
-    my ($code) = @_;
-    my $api_key = $config{"weather.aerodatabox_rapidapi_key"};
-    unless ($api_key && $code) {
-        Log::Log4perl::get_logger()->warn("AeroDataBox RapidAPI key is missing or code is undefined. Skipping AeroDataBox lookup.");
-        return;
-    }
-    my $ua = LWP::UserAgent->new(timeout => 10);
-    my $host = 'aerodatabox.p.rapidapi.com';
-    my $url;
-    if ($code =~ /^[A-Z]{3}$/) {
-        $url = "https://$host/airports/iata/$code";
-    } elsif ($code =~ /^[A-Z]{4}$/) {
-        $url = "https://$host/airports/icao/$code";
-    } else {
-        Log::Log4perl::get_logger()->warn("Code $code is not a valid IATA or ICAO code for AeroDataBox lookup.");
-        return;
-    }
-    DEBUG("AeroDataBox: Using API key: $api_key");
-    DEBUG("AeroDataBox: Fetching URL: $url");
-    my $req = HTTP::Request->new(GET => $url);
-    $req->header('X-RapidAPI-Key' => $api_key);
-    $req->header('X-RapidAPI-Host' => $host);
-    my $resp = $ua->request($req);
-    if ($resp->is_success) {
-        DEBUG("AeroDataBox: Response: " . $resp->decoded_content);
-        my $data = eval { decode_json($resp->decoded_content) };
-        if ($@) {
-            Log::Log4perl::get_logger()->warn("AeroDataBox: Failed to parse JSON response: $@");
-            return;
-        }
-        if ($data && $data->{location} && $data->{location}->{lat} && $data->{location}->{lon} && $data->{timeZone}) {
-            DEBUG("AeroDataBox: Parsed lat=$data->{location}->{lat}, lon=$data->{location}->{lon}, timezone=$data->{timeZone}");
-            return ($data->{location}->{lat}, $data->{location}->{lon}, $data->{timeZone});
-        } else {
-            Log::Log4perl::get_logger()->warn("AeroDataBox: Incomplete data in response for code $code");
-        }
-    } else {
-        Log::Log4perl::get_logger()->warn("AeroDataBox: API request failed for $code: " . $resp->status_line);
-    }
-    return;
-}
-
-sub get_coordinates_from_geocoding_api {
-    my ($location_name) = @_;
-    
-    my $api_key = $config{"weather.geocode_api_key"};
-    unless ($api_key) {
-        Log::Log4perl::get_logger()->warn("Geocoding API key is not set in the configuration.");
-        return (undef, undef);
-    }
-    
-    my $ua = LWP::UserAgent->new(timeout => 10);
-    my $geocode_url = "https://api.opencagedata.com/geocode/v1/json?q=" . uri_escape($location_name) . "&key=" . $api_key;
-    
-    DEBUG("Fetching geocoding URL: $geocode_url") if $options{verbose};
-    
-    my $response = $ua->get($geocode_url);
-    if ($response->is_success) {
-        my $data = decode_json($response->content);
-        if ($data->{results} && @{$data->{results}}) {
-            my $lat = $data->{results}->[0]->{geometry}->{lat};
-            my $long = $data->{results}->[0]->{geometry}->{lng};
-            DEBUG("Found coordinates from geocoding API: $lat, $long") if $options{verbose};
-            return ($lat, $long);
-        } else {
-            DEBUG("No results found in geocoding response") if $options{verbose};
-        }
-    } else {
-        DEBUG("Geocoding request failed: " . $response->status_line) if $options{verbose};
-    }
-    Log::Log4perl::get_logger()->warn("Failed to get coordinates from geocoding API for $location_name");
-    return (undef, undef);
-}
+# Note: Removed complex timezone and geocoding functions (170+ lines)
+# Now using simple system local time - the repeater's timezone is correct for local listeners
+# Weather fetching is handled by weather.pl which uses Nominatim + Open-Meteo (no API keys needed)
 
 sub process_time {
     my ($now, $use_24hour) = @_;
@@ -598,13 +414,16 @@ sub cleanup_files {
     if ($weather_enabled && ($silent == 1 || $silent == 2 || $silent == 0)) {
         my $temp_file = File::Spec->catfile(TMP_DIR, "temperature");
         my $cond_file = File::Spec->catfile(TMP_DIR, "condition.ulaw");
+        my $tz_file = File::Spec->catfile(TMP_DIR, "timezone");
         
         DEBUG("  Removing weather files:") if $options{verbose};
         DEBUG("    - $temp_file") if $options{verbose};
         DEBUG("    - $cond_file") if $options{verbose};
+        DEBUG("    - $tz_file") if $options{verbose};
         
         unlink $temp_file if -e $temp_file;
         unlink $cond_file if -e $cond_file;
+        unlink $tz_file if -e $tz_file;
     }
 }
 
@@ -627,17 +446,15 @@ sub show_usage {
     "                          (default: /usr/share/asterisk/sounds/en)\n" .
     "      --log=FILE          Log to specified file (default: none)\n" .
     "      --help              Show this help message and exit\n\n" .
-    "Location ID can be either:\n" .
-    "  - 5-digit location code (e.g., 77511)\n" .
-    "  - 3-4 letter airport code (e.g., KHOU)\n" .
+    "Location ID: Any postal code worldwide\n" .
+    "  - US: 77511, 10001, 90210\n" .
+    "  - International: 75001 (Paris), SW1A1AA (London), etc.\n" .
     "Examples:\n" .
-    "  perl saytime.pl -l 77511 -n 546054 -m\n" .
-    "  perl saytime.pl -l 77511 546054 -m\n" .
+    "  perl saytime.pl -l 77511 -n 546054\n" .
     "  perl saytime.pl -l 77511 546054 -s 1\n" .
-    "  perl saytime.pl -l 77511 546054 -h\n" .
+    "  perl saytime.pl -l 77511 546054 -h\n\n" .
     "Configuration in /etc/asterisk/local/weather.ini:\n" .
-    "  - timezone_api_key: Your TimeZoneDB API key (get from https://timezonedb.com)\n" .
-    "  - geocode_api_key: Your Geocoding API key (get from https://opencagedata.com)\n" .
-    "  - aerodatabox_rapidapi_key: Your AeroDataBox RapidAPI key (get from https://rapidapi.com/aerodatabox/api/aerodatabox)\n" .
-    "  - Temperature_mode: F/C (set to C for Celsius, F for Fahrenheit)\n";
+    "  - Temperature_mode: F/C (default: F)\n" .
+    "  - process_condition: YES/NO (default: YES)\n\n" .
+    "Note: No API keys required! Uses system time and weather.pl for weather.\n";
 }
