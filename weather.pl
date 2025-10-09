@@ -207,6 +207,18 @@ if ($config{cache_enabled} eq "YES" && defined $cache) {
         $Condition = $cached_data->{condition} // '';
         $current = "$Condition: $Temperature";
         $w_type = $cached_data->{type} // '';
+        
+        # Write timezone file from cache if available
+        my $cached_tz = $cached_data->{timezone} // '';
+        if ($cached_tz) {
+            eval {
+                open my $tz_fh, '>', TIMEZONE_FILE or die "Cannot open timezone file: $!";
+                print $tz_fh $cached_tz;
+                close $tz_fh;
+                DEBUG("  Restored timezone from cache: $cached_tz") if $options{verbose};
+            };
+            WARN("Failed to write timezone file from cache: $@") if $@;
+        }
     }
 }
 
@@ -220,7 +232,7 @@ if (not defined $current or $current eq "") {
     
     # If we have coordinates, fetch weather from Open-Meteo
     if (defined $lat && defined $lon) {
-        my ($temp, $cond) = fetch_weather_openmeteo($lat, $lon);
+        my ($temp, $cond, $tz) = fetch_weather_openmeteo($lat, $lon);
         
         if (defined $temp && defined $cond) {
             $Temperature = sprintf("%.0f", $temp);  # Round to nearest degree
@@ -230,12 +242,13 @@ if (not defined $current or $current eq "") {
             
             DEBUG("Open-Meteo: $Temperature°, $Condition") if $options{verbose};
             
-            # Cache the data if enabled
+            # Cache the data if enabled (including timezone)
             if ($config{cache_enabled} eq "YES" && defined $cache) {
                 $cache->set($location, {
                     temperature => $Temperature,
                     condition => $Condition,
-                    type => $w_type
+                    type => $w_type,
+                    timezone => $tz || ''
                 });
             }
         } else {
@@ -496,8 +509,9 @@ sub postal_to_coordinates {
     # Detect postal code format and set country
     if ($postal =~ /^\d{5}$/) {
         # 5 digits: Could be US, Germany, or other countries
-        # Try without country restriction first (works better internationally)
-        $url = "https://nominatim.openstreetmap.org/search?postalcode=$postal&format=json&limit=1";
+        # Try US first (most common), then fallback to international
+        $country = 'us';
+        $url = "https://nominatim.openstreetmap.org/search?postalcode=$postal&country=us&format=json&limit=1";
     } elsif ($postal =~ /^([A-Z])\d[A-Z]\s?\d[A-Z]\d$/i) {
         # Canadian: A1A 1A1 or A1A1A1
         $country = 'ca';
@@ -531,6 +545,24 @@ sub postal_to_coordinates {
             return ($lat, $lon);
         } else {
             DEBUG("  No coordinates found for postal code $postal") if $options{verbose};
+            
+            # If US search failed for 5-digit code, try international (Germany, etc.)
+            if ($country eq 'us' && $postal =~ /^\d{5}$/) {
+                DEBUG("  Trying international search for $postal") if $options{verbose};
+                my $intl_url = "https://nominatim.openstreetmap.org/search?postalcode=$postal&format=json&limit=1";
+                sleep 1;  # Rate limit
+                $response = $ua->get($intl_url);
+                if ($response->is_success) {
+                    $data = eval { decode_json($response->decoded_content) };
+                    if ($data && ref($data) eq 'ARRAY' && @$data > 0) {
+                        my $lat = $data->[0]->{lat};
+                        my $lon = $data->[0]->{lon};
+                        my $display = $data->[0]->{display_name} || $postal;
+                        DEBUG("  Found internationally: $display") if $options{verbose};
+                        return ($lat, $lon);
+                    }
+                }
+            }
             
             # For Canadian postal codes, Nominatim often lacks detailed data
             # Use FSA-to-city mapping as fallback
@@ -644,7 +676,7 @@ sub fetch_weather_openmeteo {
                 WARN("Failed to write timezone file: $@") if $@;
             }
             
-            return ($temp, $condition);
+            return ($temp, $condition, $timezone);
         }
     } else {
         DEBUG("Open-Meteo request failed: " . $response->status_line) if $options{verbose};
