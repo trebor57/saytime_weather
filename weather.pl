@@ -103,6 +103,11 @@ process_condition = YES
 ; Temperature display mode (F for Fahrenheit, C for Celsius)
 Temperature_mode = F
 
+; Default country for postal code lookups (helps with 5-digit codes)
+; Options: us, ca, de, fr, uk, etc. (ISO 3166-1 alpha-2 codes)
+; Leave blank for international search
+default_country = us
+
 ; Weather data source (openmeteo is free, no API key required)
 weather_provider = openmeteo
 
@@ -128,6 +133,7 @@ EOT
 # Set default values for all configuration options
 $config{process_condition} = "YES" unless defined $config{process_condition};
 $config{Temperature_mode} = "F" unless defined $config{Temperature_mode};
+$config{default_country} = "us" unless defined $config{default_country};  # Default to US
 $config{weather_provider} = "openmeteo" unless defined $config{weather_provider};  # Default to Open-Meteo
 $config{cache_enabled} = "YES" unless defined $config{cache_enabled};
 $config{cache_duration} = "1800" unless defined $config{cache_duration};  # 30 minutes default
@@ -179,8 +185,9 @@ if (not defined $location || $location eq '') {
     print "Geocoding: Nominatim/OpenStreetMap (free, no API key)\n";
     print "\n";
     print "Edit /etc/asterisk/local/weather.ini to configure:\n";
-    print "  - process_condition: YES/NO (default: YES)\n";
     print "  - Temperature_mode: C/F (default: F)\n";
+    print "  - default_country: us/ca/de/fr/uk (default: us)\n";
+    print "  - process_condition: YES/NO (default: YES)\n";
     print "  - cache_enabled: YES/NO (default: YES)\n";
     print "  - cache_duration: Cache duration in seconds (default: 1800)\n";
     print "\n";
@@ -526,10 +533,15 @@ sub postal_to_coordinates {
     
     # Detect postal code format and set country
     if ($postal =~ /^\d{5}$/) {
-        # 5 digits: Could be US, Germany, or other countries
-        # Try US first (most common), then fallback to international
-        $country = 'us';
-        $url = "https://nominatim.openstreetmap.org/search?postalcode=$postal&country=us&format=json&limit=1";
+        # 5 digits: Could be US, Germany, France, or other countries
+        # Use configured default_country, fallback to US if not set
+        $country = lc($config{default_country}) || 'us';
+        if ($country && $country ne '') {
+            $url = "https://nominatim.openstreetmap.org/search?postalcode=$postal&country=$country&format=json&limit=1";
+            DEBUG("  Using default country: $country") if $options{verbose};
+        } else {
+            $url = "https://nominatim.openstreetmap.org/search?postalcode=$postal&format=json&limit=1";
+        }
     } elsif ($postal =~ /^([A-Z])\d[A-Z]\s?\d[A-Z]\d$/i) {
         # Canadian: A1A 1A1 or A1A1A1
         $country = 'ca';
@@ -564,9 +576,9 @@ sub postal_to_coordinates {
         } else {
             DEBUG("  No coordinates found for postal code $postal") if $options{verbose};
             
-            # If US search failed for 5-digit code, try international (Germany, etc.)
-            if ($country eq 'us' && $postal =~ /^\d{5}$/) {
-                DEBUG("  Trying international search for $postal") if $options{verbose};
+            # If country-specific search failed for 5-digit code, try international
+            if ($country && $postal =~ /^\d{5}$/) {
+                DEBUG("  $country search failed, trying international for $postal") if $options{verbose};
                 my $intl_url = "https://nominatim.openstreetmap.org/search?postalcode=$postal&format=json&limit=1";
                 sleep 1;  # Rate limit
                 $response = $ua->get($intl_url);
