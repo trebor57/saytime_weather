@@ -2,7 +2,7 @@
 
 A comprehensive time and weather announcement system for Asterisk PBX, designed specifically for radio systems, repeater controllers, and amateur radio applications. This system provides automated voice announcements of current time and weather conditions using high-quality synthesized speech.
 
-**Version 2.7.0** - Major update! Now using free Open-Meteo API with **zero API keys required** and **worldwide postal code support**!
+**Version 2.7.1** - Major update! Now using free Open-Meteo API with **zero API keys required** and **worldwide postal code support**!
 
 ## 🚀 Features
 
@@ -38,12 +38,12 @@ A comprehensive time and weather announcement system for Asterisk PBX, designed 
 1. **Download the latest release**:
    ```bash
    cd /tmp
-   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.7.0/saytime-weather_2.7.0_all.deb
+   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.7.1/saytime-weather_2.7.1_all.deb
    ```
 
 2. **Install the package**:
    ```bash
-   sudo apt install ./saytime-weather_2.7.0_all.deb
+   sudo apt install ./saytime-weather_2.7.1_all.deb
    ```
 
    This will automatically:
@@ -88,6 +88,10 @@ Edit `/etc/asterisk/local/weather.ini` (auto-created on first run):
 # Temperature display mode (F for Fahrenheit, C for Celsius)
 Temperature_mode = F
 
+# Default country for postal code lookups (ISO 3166-1 alpha-2 code)
+# Options: us, ca, de, fr, uk, it, es, etc.
+default_country = us
+
 # Process weather condition announcements (YES/NO)
 process_condition = YES
 
@@ -97,6 +101,14 @@ cache_duration = 1800                   ; 30 minutes in seconds
 ```
 
 **That's it!** No API keys required.
+
+### What Changed in v2.7.1?
+
+**New in 2.7.1:**
+- ✅ **Fixed timezone feature** - Time now correctly matches weather location
+- ✅ **Added default_country config** - Set your country for postal code lookups
+- ✅ **Antarctic station codes** - SOUTHPOLE, MCMURDO, PALMER, VOSTOK support
+- ✅ **Improved US ZIP priority** - Prevents wrong country matches
 
 ### What Changed in v2.7.0?
 
@@ -346,6 +358,22 @@ This project is licensed under the terms specified in the LICENSE file.
 - **GitHub Issues**: [Report bugs or request features](https://github.com/w5gle/saytime-weather/issues)
 - **Documentation**: Check the [Wiki](https://github.com/w5gle/saytime-weather/wiki) for detailed guides
 - **Community**: Join our [Discussions](https://github.com/w5gle/saytime-weather/discussions)
+
+## ✨ What's New in Version 2.7.1
+
+### Bug Fixes & Improvements
+- 🐛 **Fixed timezone return bug** - DateTime object now properly returned from function
+- 🐛 **Fixed timezone caching** - Timezone now saved/restored from cache correctly
+- 🐛 **Fixed execution order** - Weather processed before time to ensure timezone file exists
+- ⚙️ **Added default_country config** - Prevents wrong country matches for 5-digit codes
+- 🇦🇶 **Added Antarctic stations** - SOUTHPOLE, MCMURDO, PALMER, VOSTOK location codes
+- 🇺🇸 **Improved US ZIP priority** - US postal codes checked first, fallback to international
+
+### Timezone Feature Now Fully Working
+- Time announcements now correctly use weather location timezone
+- Server in Central Time + LA weather = Announces Pacific Time ✅
+- Server in Central Time + NY weather = Announces Eastern Time ✅
+- Tested and verified with multiple timezone differences
 
 ## ✨ What's New in Version 2.7.0
 
