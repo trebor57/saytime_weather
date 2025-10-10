@@ -50,7 +50,7 @@ use constant {
     TEMP_FILE => "/tmp/temperature",
     COND_FILE => "/tmp/condition.ulaw",
     TIMEZONE_FILE => "/tmp/timezone",
-    VERSION => '2.7.0',
+    VERSION => '2.7.1',
     WEATHER_SOUND_DIR => "/usr/share/asterisk/sounds/en/wx",
 };
 

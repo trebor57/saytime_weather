@@ -1,3 +1,15 @@
+saytime-weather (2.7.1) unstable; urgency=medium
+
+  * Fixed timezone feature return bug in get_current_time function
+  * Fixed timezone not being saved/restored from cache properly
+  * Fixed timezone file creation order (weather before time)
+  * Added default_country configuration option for postal code disambiguation
+  * Added Antarctic research station location codes (SOUTHPOLE, MCMURDO, etc.)
+  * Improved US ZIP code priority to prevent international mismatches
+  * All timezone features now fully functional and tested
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Wed, 08 Oct 2025 21:30:00 -0500
+
 saytime-weather (2.7.0) unstable; urgency=medium
 
   * CRITICAL: Replaced discontinued AccuWeather RSS with Open-Meteo API
