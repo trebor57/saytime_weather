@@ -983,14 +983,22 @@ sub postal_to_coordinates {
     return;
 }
 
-# Convert Open-Meteo WMO weather code to text description
+# Convert Open-Meteo WMO weather code to text description with day/night awareness
 sub weather_code_to_text {
-    my ($code) = @_;
+    my ($code, $is_day) = @_;
+    $is_day = 1 unless defined $is_day;  # Default to day if not provided
     
+    # Handle codes 1-2 with day/night awareness
+    # During day: can say "Sunny", at night: say "Clear" (sun isn't up!)
+    if ($code == 1) {
+        return $is_day ? 'Sunny' : 'Mainly Clear';
+    } elsif ($code == 2) {
+        return $is_day ? 'Mostly Sunny' : 'Partly Cloudy';
+    }
+    
+    # All other codes don't need day/night distinction
     my %codes = (
         0  => 'Clear',
-        1  => 'Mainly Clear',
-        2  => 'Partly Cloudy',
         3  => 'Overcast',
         45 => 'Foggy',
         48 => 'Foggy',
@@ -1031,8 +1039,10 @@ sub fetch_weather_openmeteo {
     $ua->agent('Mozilla/5.0 (compatible; WeatherBot/1.0)');
     
     # Always request in Fahrenheit, convert to Celsius later if needed
+    # Use 'current' parameter to get is_day field for day/night detection
     my $url = "https://api.open-meteo.com/v1/forecast?" .
-              "latitude=$lat&longitude=$lon&current_weather=true&" .
+              "latitude=$lat&longitude=$lon&" .
+              "current=temperature_2m,weather_code,is_day&" .
               "temperature_unit=fahrenheit&timezone=auto";
     
     my $response = $ua->get($url);
@@ -1043,14 +1053,16 @@ sub fetch_weather_openmeteo {
             return;
         }
         
-        if ($data->{current_weather}) {
-            my $temp = $data->{current_weather}->{temperature};
-            my $code = $data->{current_weather}->{weathercode};
-            my $condition = weather_code_to_text($code);
+        if ($data->{current}) {
+            my $temp = $data->{current}->{temperature_2m};
+            my $code = $data->{current}->{weather_code};
+            my $is_day = $data->{current}->{is_day} // 1;  # Default to day if missing
+            my $condition = weather_code_to_text($code, $is_day);
             my $timezone = $data->{timezone} || '';
             
             DEBUG("  Temperature: $temp") if $options{verbose};
             DEBUG("  Weather code: $code ($condition)") if $options{verbose};
+            DEBUG("  Day/Night: " . ($is_day ? "Day" : "Night")) if $options{verbose};
             DEBUG("  Timezone: $timezone") if $options{verbose};
             
             # Save timezone to file so saytime.pl can use it
