@@ -19,14 +19,13 @@ process_condition = YES
 ; Temperature display mode (F for Fahrenheit, C for Celsius)
 Temperature_mode = F
 
-; Weather data sources
-use_accuweather = YES
+; Default country for postal code lookups (helps with 5-digit codes)
+; Options: us, ca, de, fr, uk, etc. (ISO 3166-1 alpha-2 codes)
+; Leave blank for international search
+default_country = us
 
-; TimeZoneDB API key for timezone lookup (get free key from https://timezonedb.com)
-timezone_api_key = 
-
-; Geocoding API key for location coordinates (get free key from https://opencagedata.com)
-geocode_api_key = 
+; Weather data source (openmeteo is free, no API key required)
+weather_provider = openmeteo
 
 ; Cache settings
 cache_enabled = YES

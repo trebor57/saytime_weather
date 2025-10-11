@@ -420,7 +420,8 @@ sub show_usage {
     print "Configuration in /etc/asterisk/local/weather.ini:\n";
     print "  - Temperature_mode: F/C (set to C for Celsius, F for Fahrenheit)\n";
     print "  - process_condition: YES/NO (default: YES)\n";
-    print "  - use_accuweather: YES/NO (default: YES)\n";
+    print "  - default_country: ISO country code for postal lookups (default: us)\n";
+    print "  - weather_provider: Weather data source (default: openmeteo)\n";
     print "  - cache_enabled: YES/NO (default: YES)\n";
     print "  - cache_duration: Cache duration in seconds (default: 1800)\n";
     exit 1;
