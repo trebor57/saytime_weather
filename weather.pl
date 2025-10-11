@@ -768,12 +768,87 @@ sub postal_to_coordinates {
     
     DEBUG("Converting postal code $postal to coordinates...") if $options{verbose};
     
-    # Special locations without postal codes (Antarctica, remote areas)
+    # Special locations without postal codes (Antarctica, remote areas, DXpedition sites)
     my %special_locations = (
+        # ===== ANTARCTICA =====
         'SOUTHPOLE' => [-90.0, 0.0, 'South Pole Station, Antarctica'],
-        'MCMURDO'   => [-77.85, 166.67, 'McMurdo Station, Antarctica'],
-        'PALMER'    => [-64.77, -64.05, 'Palmer Station, Antarctica'],
-        'VOSTOK'    => [-78.46, 106.84, 'Vostok Station, Antarctica'],
+        'MCMURDO'   => [-77.85, 166.67, 'McMurdo Station, Antarctica (US)'],
+        'PALMER'    => [-64.77, -64.05, 'Palmer Station, Antarctica (US)'],
+        'VOSTOK'    => [-78.46, 106.84, 'Vostok Station, Antarctica (Russia)'],
+        'CASEY'     => [-66.28, 110.53, 'Casey Station, Antarctica (Australia)'],
+        'MAWSON'    => [-67.60, 62.87, 'Mawson Station, Antarctica (Australia)'],
+        'DAVIS'     => [-68.58, 77.97, 'Davis Station, Antarctica (Australia)'],
+        'SCOTTBASE' => [-77.85, 166.76, 'Scott Base, Antarctica (New Zealand)'],
+        'SYOWA'     => [-69.00, 39.58, 'Syowa Station, Antarctica (Japan)'],
+        'CONCORDIA' => [-75.10, 123.33, 'Concordia Station, Antarctica (France/Italy)'],
+        'HALLEY'    => [-75.58, -26.66, 'Halley Research Station, Antarctica (UK)'],
+        'DUMONT'    => [-66.66, 140.01, 'Dumont d\'Urville Station, Antarctica (France)'],
+        'SANAE'     => [-71.67, -2.84, 'SANAE IV Station, Antarctica (South Africa)'],
+        
+        # ===== ARCTIC =====
+        'ALERT'        => [82.50, -62.35, 'Alert, Nunavut (Northernmost Settlement)'],
+        'EUREKA'       => [79.99, -85.93, 'Eureka, Nunavut, Canada'],
+        'THULE'        => [76.53, -68.70, 'Thule Air Base, Greenland'],
+        'LONGYEARBYEN' => [78.22, 15.65, 'Longyearbyen, Svalbard, Norway'],
+        'BARROW'       => [71.29, -156.79, 'Utqiagvik (Barrow), Alaska'],
+        'RESOLUTE'     => [74.72, -94.83, 'Resolute, Nunavut, Canada'],
+        'GRISE'        => [76.42, -82.90, 'Grise Fiord, Nunavut, Canada'],
+        
+        # ===== REMOTE ISLANDS (DXpedition Sites) =====
+        'ASCENSION'    => [-7.95, -14.36, 'Ascension Island (ZD8)'],
+        'STHELENA'     => [-15.97, -5.72, 'St. Helena Island (ZD7)'],
+        'TRISTAN'      => [-37.11, -12.28, 'Tristan da Cunha (ZD9)'],
+        'BOUVET'       => [-54.42, 3.38, 'Bouvet Island (3Y0)'],
+        'HEARD'        => [-53.10, 73.51, 'Heard Island (VK0)'],
+        'KERGUELEN'    => [-49.35, 70.22, 'Kerguelen Islands (FT5)'],
+        'CROZET'       => [-46.43, 51.86, 'Crozet Islands (FT4)'],
+        'AMSTERDAM'    => [-37.83, 77.57, 'Amsterdam Island (FT5)'],
+        'MACQUARIE'    => [-54.62, 158.86, 'Macquarie Island (VK0)'],
+        
+        # ===== PACIFIC ISLANDS =====
+        'MIDWAY'       => [28.21, -177.38, 'Midway Atoll (KH4)'],
+        'WAKE'         => [19.28, 166.65, 'Wake Island (KH9)'],
+        'JOHNSTON'     => [16.73, -169.53, 'Johnston Atoll (KH3)'],
+        'PALMYRA'      => [5.89, -162.08, 'Palmyra Atoll (KH5K)'],
+        'JARVIS'       => [-0.37, -159.99, 'Jarvis Island (KH5)'],
+        'HOWLAND'      => [0.81, -176.62, 'Howland Island (KH1)'],
+        'BAKER'        => [0.19, -176.48, 'Baker Island (KH1)'],
+        'KINGMAN'      => [6.38, -162.42, 'Kingman Reef (KH5K)'],
+        
+        # ===== INDIAN OCEAN =====
+        'DIEGO'        => [-7.26, 72.40, 'Diego Garcia (VQ9)'],
+        'CHAGOS'       => [-7.26, 72.40, 'Chagos Archipelago (VQ9)'],
+        'COCOS'        => [-12.19, 96.83, 'Cocos (Keeling) Islands (VK9C)'],
+        'CHRISTMAS'    => [-10.49, 105.62, 'Christmas Island (VK9X)'],
+        
+        # ===== SOUTH ATLANTIC =====
+        'FALKLANDS'    => [-51.70, -59.52, 'Stanley, Falkland Islands (VP8)'],
+        'SOUTHGEORGIA' => [-54.28, -36.51, 'Grytviken, South Georgia (VP8)'],
+        'SOUTHSANDWICH'=> [-59.43, -26.35, 'South Sandwich Islands (VP8)'],
+        
+        # ===== PACIFIC POLYNESIA =====
+        'MARQUESAS'    => [-9.00, -140.00, 'Marquesas Islands, French Polynesia (FO)'],
+        'EASTER'       => [-27.11, -109.36, 'Easter Island (CE0Y)'],
+        'PITCAIRN'     => [-25.07, -130.10, 'Pitcairn Island (VP6)'],
+        'CLIPPERTON'   => [10.30, -109.22, 'Clipperton Island (FO/C)'],
+        'GALAPAGOS'    => [-0.95, -90.97, 'Galapagos Islands (HC8)'],
+        
+        # ===== MOUNTAIN OBSERVATORIES =====
+        'MAUNA'        => [19.54, -155.58, 'Mauna Loa Observatory, Hawaii'],
+        'JUNGFRAUJOCH' => [46.55, 7.98, 'Jungfraujoch Research Station, Switzerland'],
+        
+        # ===== EXTREME DESERTS =====
+        'MCMURDODRY'   => [-77.85, 163.00, 'McMurdo Dry Valleys, Antarctica'],
+        'ATACAMA'      => [-24.50, -69.25, 'Atacama Desert, Chile'],
+        
+        # ===== OTHER NOTABLE REMOTE LOCATIONS =====
+        'GOUGH'        => [-40.35, -9.88, 'Gough Island (ZD9)'],
+        'MARION'       => [-46.88, 37.86, 'Marion Island (ZS8)'],
+        'PRINCE'       => [-46.77, 37.86, 'Prince Edward Island (ZS8)'],
+        'CAMPBELL'     => [-52.55, 169.15, 'Campbell Island (ZL9)'],
+        'AUCKLAND'     => [-50.73, 166.09, 'Auckland Islands (ZL9)'],
+        'KERMADEC'     => [-29.25, -177.92, 'Kermadec Islands (ZL8)'],
+        'CHATHAM'      => [-43.95, -176.55, 'Chatham Islands (ZL7)'],
     );
     
     my $postal_uc = uc($postal);
