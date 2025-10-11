@@ -2,7 +2,7 @@
 
 A comprehensive time and weather announcement system for Asterisk PBX, designed specifically for radio systems, repeater controllers, and amateur radio applications. This system provides automated voice announcements of current time and weather conditions using high-quality synthesized speech.
 
-**Version 2.7.2** - Critical temperature bug fix for Celsius/Canadian users + complete Weather Underground cleanup!
+**Version 2.7.3** - Fixed Canadian postal code accuracy - Ontario locations now resolve to correct coordinates!
 
 ## 🚀 Features
 
@@ -38,12 +38,12 @@ A comprehensive time and weather announcement system for Asterisk PBX, designed 
 1. **Download the latest release**:
    ```bash
    cd /tmp
-   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.7.2/saytime-weather_2.7.2_all.deb
+   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.7.3/saytime-weather_2.7.3_all.deb
    ```
 
 2. **Install the package**:
    ```bash
-   sudo apt install ./saytime-weather_2.7.2_all.deb
+   sudo apt install ./saytime-weather_2.7.3_all.deb
    ```
 
    This will automatically:
@@ -101,6 +101,14 @@ cache_duration = 1800                   ; 30 minutes in seconds
 ```
 
 **That's it!** No API keys required.
+
+### What Changed in v2.7.3?
+
+**New in 2.7.3:**
+- 🐛 **CRITICAL FIX: Canadian postal code accuracy** - Ontario postal codes now resolve correctly
+- 📍 **Added 50+ detailed FSA mappings** - N7L→Chatham-Kent, N6A→London, N8W→Windsor, etc.
+- 🎯 **Improved location accuracy** - 3-character FSA lookup prioritized over generic regions
+- 🔧 **Fixed lookup logic** - Canadian postal codes no longer use wrong province center
 
 ### What Changed in v2.7.2?
 
@@ -366,6 +374,33 @@ This project is licensed under the terms specified in the LICENSE file.
 - **GitHub Issues**: [Report bugs or request features](https://github.com/w5gle/saytime-weather/issues)
 - **Documentation**: Check the [Wiki](https://github.com/w5gle/saytime-weather/wiki) for detailed guides
 - **Community**: Join our [Discussions](https://github.com/w5gle/saytime-weather/discussions)
+
+## ✨ What's New in Version 2.7.3
+
+### Critical Bug Fix (HIGH PRIORITY)
+- 🐛 **CRITICAL: Fixed Canadian postal code location accuracy**
+  - Ontario postal codes were resolving to wrong coordinates, causing incorrect temperatures
+  - **Example**: N7L3R5 (Chatham) showed 35°F instead of 47°F (11°F error!)
+  - **Problem**: Generic 'N' FSA mapped to "Ontario" which resolved to geographic center (50°N, -86°W near Hudson Bay) instead of actual city
+  - **Impact**: All Ontario N-series postal codes showed temperatures from wrong location hundreds of km away
+  - **Solution**: Added comprehensive 3-character FSA mapping for 50+ Ontario postal areas
+  - **Status**: Tested and verified with Chatham, London, Windsor, Sarnia ✅
+
+### Location Accuracy Improvements
+- 📍 **Added detailed 3-character FSA mappings for Ontario**:
+  - N7L → Chatham-Kent, Ontario (42.4°N, -82.1°W)
+  - N6A-N6K → London, Ontario
+  - N8A-N9Y → Windsor, Ontario (15 specific FSAs)
+  - N7M/N7T → Sarnia, Ontario
+  - N1G-N1L → Guelph, Ontario
+  - N2C-N2R → Kitchener, Ontario (10 specific FSAs)
+  - N3C-N3H → Cambridge, Ontario
+- 🎯 **Improved lookup logic**: 3-character FSA checked first, single-letter fallback second
+- 🇨🇦 **Better single-letter fallbacks**: N→London (not generic "Ontario"), L→Mississauga, P→Thunder Bay
+- 🔧 **Fixed indentation bug** in Canadian FSA fallback code block
+
+### Why This Update Matters
+If you're in **Ontario, Canada** with postal codes starting with **N, L, or P**, **update immediately**. Previous versions used wrong coordinates causing temperature errors of 10°F or more. After updating, clear cache: `sudo rm -rf /var/cache/weather/*`
 
 ## ✨ What's New in Version 2.7.2
 
