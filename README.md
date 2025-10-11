@@ -2,7 +2,7 @@
 
 A comprehensive time and weather announcement system for Asterisk PBX, designed specifically for radio systems, repeater controllers, and amateur radio applications. This system provides automated voice announcements of current time and weather conditions using high-quality synthesized speech.
 
-**Version 2.7.1** - Major update! Now using free Open-Meteo API with **zero API keys required** and **worldwide postal code support**!
+**Version 2.7.2** - Critical temperature bug fix for Celsius/Canadian users + complete Weather Underground cleanup!
 
 ## 🚀 Features
 
@@ -38,12 +38,12 @@ A comprehensive time and weather announcement system for Asterisk PBX, designed 
 1. **Download the latest release**:
    ```bash
    cd /tmp
-   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.7.1/saytime-weather_2.7.1_all.deb
+   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.7.2/saytime-weather_2.7.2_all.deb
    ```
 
 2. **Install the package**:
    ```bash
-   sudo apt install ./saytime-weather_2.7.1_all.deb
+   sudo apt install ./saytime-weather_2.7.2_all.deb
    ```
 
    This will automatically:
@@ -101,6 +101,14 @@ cache_duration = 1800                   ; 30 minutes in seconds
 ```
 
 **That's it!** No API keys required.
+
+### What Changed in v2.7.2?
+
+**New in 2.7.2:**
+- 🐛 **CRITICAL FIX: Temperature bug** - Fixed double-conversion for Celsius/Canadian users
+- 🧹 **Removed Weather Underground** - Cleaned all remaining references from codebase
+- ⚙️ **Updated configuration** - Removed obsolete API keys, added `weather_provider`
+- 📝 **Updated help text** - Now reflects actual configuration options
 
 ### What Changed in v2.7.1?
 
@@ -358,6 +366,32 @@ This project is licensed under the terms specified in the LICENSE file.
 - **GitHub Issues**: [Report bugs or request features](https://github.com/w5gle/saytime-weather/issues)
 - **Documentation**: Check the [Wiki](https://github.com/w5gle/saytime-weather/wiki) for detailed guides
 - **Community**: Join our [Discussions](https://github.com/w5gle/saytime-weather/discussions)
+
+## ✨ What's New in Version 2.7.2
+
+### Critical Bug Fix (HIGH PRIORITY)
+- 🐛 **CRITICAL: Fixed temperature conversion bug for Celsius users**
+  - Temperature was being double-converted causing wildly incorrect readings
+  - **Example**: 5°C actual temperature would incorrectly show as -15°C
+  - **Problem**: API was requested in Celsius mode, then incorrectly converted from Fahrenheit
+  - **Impact**: All Canadian and Celsius users had wrong temperatures
+  - **Solution**: Always request Fahrenheit from API, convert to Celsius only when needed
+  - **Status**: Tested and verified with Ottawa, Toronto, Vancouver ✅
+
+### Code Cleanup
+- 🧹 **Removed all Weather Underground references**
+  - Cleaned remaining reference in help text
+  - Removed from postinst installation script
+  - Deleted stale build artifacts with old code
+- ⚙️ **Updated configuration to match current code**
+  - Replaced obsolete `use_accuweather` with `weather_provider=openmeteo`
+  - Removed unused `timezone_api_key` (no longer needed)
+  - Removed unused `geocode_api_key` (no longer needed)
+  - Added `default_country` for postal code disambiguation
+- 📝 **Updated help text** - Now accurately reflects actual configuration options
+
+### Why This Update Matters
+If you're using Celsius mode (`Temperature_mode = C`) or are in Canada, **you must update immediately**. The previous version was showing completely incorrect temperatures due to a double-conversion bug.
 
 ## ✨ What's New in Version 2.7.1
 
