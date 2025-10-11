@@ -1,3 +1,16 @@
+saytime-weather (2.7.2) unstable; urgency=high
+
+  * CRITICAL: Fixed temperature conversion bug for Celsius/Canadian users
+    - Temperature was being double-converted causing incorrect readings
+    - Example: 5°C would incorrectly show as -15°C
+  * Removed all remaining Weather Underground references from codebase
+  * Updated postinst configuration template to match current code
+  * Removed obsolete API keys (timezone_api_key, geocode_api_key)
+  * Updated help text to reflect actual configuration options
+  * Configuration now correctly uses weather_provider=openmeteo
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Sat, 11 Oct 2025 05:30:00 -0500
+
 saytime-weather (2.7.1) unstable; urgency=medium
 
   * Fixed timezone feature return bug in get_current_time function
