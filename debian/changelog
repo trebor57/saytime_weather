@@ -1,3 +1,28 @@
+saytime-weather (2.7.4) unstable; urgency=medium
+
+  * NEW FEATURE: Added ICAO airport code support with METAR weather data
+    - Now supports 6000+ airports worldwide (KJFK, EGLL, CYYZ, LFPG, RJAA, etc.)
+    - Fetches METAR (aviation weather) from NOAA Aviation Weather API
+    - Automatic detection of ICAO codes vs postal codes
+    - Falls back to postal code lookup if METAR unavailable
+  * NEW FEATURE: Command line options to override config settings
+    - Added -d, --default-country to test different countries without config edits
+    - Added -t, --temperature-mode to override F/C setting
+    - Added --no-cache and --no-condition flags
+    - Added -h, --help for detailed help and --version
+  * NEW FEATURE: Day/night detection for weather conditions
+    - Prevents saying "sunny" at 2 AM (now says "mainly clear")
+    - Uses Open-Meteo is_day field for accurate day/night awareness
+    - Code 1-2 now context-aware: "Sunny" during day, "Clear" at night
+  * Improved configuration file with comprehensive documentation
+    - Added detailed explanations for each setting
+    - Included practical examples and usage instructions
+    - Shows all options with defaults and recommendations
+  * Enhanced help text with detailed examples for ICAO and postal codes
+  * Updated Open-Meteo API to use 'current' parameter (latest API)
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Sat, 11 Oct 2025 07:30:00 -0500
+
 saytime-weather (2.7.3) unstable; urgency=high
 
   * CRITICAL: Fixed Canadian postal code location accuracy
