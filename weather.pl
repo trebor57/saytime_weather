@@ -503,27 +503,80 @@ sub postal_to_coordinates {
     my $ua = LWP::UserAgent->new(timeout => 10);
     $ua->agent('Mozilla/5.0 (compatible; WeatherBot/1.0; +https://github.com/w5gle/saytime-weather)');
     
-    # Basic Canadian FSA to city mapping (Nominatim has poor Canadian postal code coverage)
+    # Comprehensive Canadian FSA to city mapping (Nominatim has poor Canadian postal code coverage)
     # FSA = Forward Sortation Area (first 3 characters of Canadian postal code)
+    # Using 3-character FSAs for better accuracy, falling back to single letter
     my %canadian_fsa_cities = (
-        'M' => 'Toronto, Ontario',          # Toronto (all M codes)
+        # Ontario - Specific FSAs
+        'N7L' => 'Chatham-Kent, Ontario',    # Chatham area
+        'N7M' => 'Sarnia, Ontario',          # Sarnia
+        'N7T' => 'Sarnia, Ontario',          # Sarnia
+        'N6A' => 'London, Ontario',          # London
+        'N6B' => 'London, Ontario',          # London
+        'N6C' => 'London, Ontario',          # London
+        'N6E' => 'London, Ontario',          # London
+        'N6G' => 'London, Ontario',          # London
+        'N6H' => 'London, Ontario',          # London
+        'N6J' => 'London, Ontario',          # London
+        'N6K' => 'London, Ontario',          # London
+        'N8A' => 'Windsor, Ontario',         # Windsor
+        'N8H' => 'Windsor, Ontario',         # Windsor
+        'N8N' => 'Windsor, Ontario',         # Windsor
+        'N8P' => 'Windsor, Ontario',         # Windsor
+        'N8R' => 'Windsor, Ontario',         # Windsor
+        'N8S' => 'Windsor, Ontario',         # Windsor
+        'N8T' => 'Windsor, Ontario',         # Windsor
+        'N8V' => 'Windsor, Ontario',         # Windsor
+        'N8W' => 'Windsor, Ontario',         # Windsor
+        'N8X' => 'Windsor, Ontario',         # Windsor
+        'N8Y' => 'Windsor, Ontario',         # Windsor
+        'N9A' => 'Windsor, Ontario',         # Windsor
+        'N9B' => 'Windsor, Ontario',         # Windsor
+        'N9C' => 'Windsor, Ontario',         # Windsor
+        'N9E' => 'Windsor, Ontario',         # Windsor
+        'N9G' => 'Windsor, Ontario',         # Windsor
+        'N9H' => 'Windsor, Ontario',         # Windsor
+        'N9J' => 'Windsor, Ontario',         # Windsor
+        'N9K' => 'Windsor, Ontario',         # Windsor
+        'N9Y' => 'Windsor, Ontario',         # Windsor
+        'N1G' => 'Guelph, Ontario',          # Guelph
+        'N1H' => 'Guelph, Ontario',          # Guelph
+        'N1K' => 'Guelph, Ontario',          # Guelph
+        'N1L' => 'Guelph, Ontario',          # Guelph
+        'N3C' => 'Cambridge, Ontario',       # Cambridge
+        'N3E' => 'Cambridge, Ontario',       # Cambridge
+        'N3H' => 'Cambridge, Ontario',       # Cambridge
+        'N2C' => 'Kitchener, Ontario',       # Kitchener
+        'N2E' => 'Kitchener, Ontario',       # Kitchener
+        'N2G' => 'Kitchener, Ontario',       # Kitchener
+        'N2H' => 'Kitchener, Ontario',       # Kitchener
+        'N2J' => 'Kitchener, Ontario',       # Kitchener
+        'N2K' => 'Kitchener, Ontario',       # Kitchener
+        'N2L' => 'Kitchener, Ontario',       # Kitchener
+        'N2M' => 'Kitchener, Ontario',       # Kitchener
+        'N2N' => 'Kitchener, Ontario',       # Kitchener
+        'N2P' => 'Kitchener, Ontario',       # Kitchener
+        'N2R' => 'Kitchener, Ontario',       # Kitchener
+        
+        # Single-letter fallbacks for major cities
+        'M' => 'Toronto, Ontario',           # Toronto (all M codes)
         'V' => 'Vancouver, British Columbia', # Vancouver (all V codes)
-        'H' => 'Montreal, Quebec',          # Montreal (all H codes)  
-        'T' => 'Calgary, Alberta',          # Calgary/Edmonton area
-        'R' => 'Winnipeg, Manitoba',        # Winnipeg area
-        'K' => 'Ottawa, Ontario',           # Ottawa area
-        'N' => 'Ontario',                   # Southwestern/Central Ontario
-        'L' => 'Ontario',                   # Southern Ontario (GTA suburbs)
-        'P' => 'Ontario',                   # Northern Ontario
-        'S' => 'Saskatchewan',              # Saskatchewan
-        'E' => 'New Brunswick',             # New Brunswick
-        'B' => 'Nova Scotia',               # Nova Scotia
-        'C' => 'Prince Edward Island',      # PEI
-        'A' => 'Newfoundland',              # Newfoundland
-        'G' => 'Quebec',                    # Eastern Quebec
-        'J' => 'Quebec',                    # Western Quebec
-        'X' => 'Nunavut',                   # Territories
-        'Y' => 'Yukon',                     # Yukon
+        'H' => 'Montreal, Quebec',           # Montreal (all H codes)  
+        'T' => 'Calgary, Alberta',           # Calgary/Edmonton area
+        'R' => 'Winnipeg, Manitoba',         # Winnipeg area
+        'K' => 'Ottawa, Ontario',            # Ottawa area
+        'L' => 'Mississauga, Ontario',       # GTA west (better than generic "Ontario")
+        'N' => 'London, Ontario',            # Southwestern Ontario (better default than generic "Ontario")
+        'P' => 'Thunder Bay, Ontario',       # Northern Ontario
+        'S' => 'Regina, Saskatchewan',       # Saskatchewan
+        'E' => 'Moncton, New Brunswick',     # New Brunswick
+        'B' => 'Halifax, Nova Scotia',       # Nova Scotia
+        'C' => 'Charlottetown, Prince Edward Island', # PEI
+        'A' => 'St. Johns, Newfoundland',    # Newfoundland
+        'G' => 'Quebec City, Quebec',        # Eastern Quebec
+        'J' => 'Gatineau, Quebec',           # Western Quebec
+        'X' => 'Whitehorse, Yukon',          # Territories
+        'Y' => 'Whitehorse, Yukon',          # Yukon
     );
     
     # Use Nominatim (OpenStreetMap) geocoding service - free, no API key, worldwide
@@ -542,10 +595,10 @@ sub postal_to_coordinates {
         } else {
             $url = "https://nominatim.openstreetmap.org/search?postalcode=$postal&format=json&limit=1";
         }
-    } elsif ($postal =~ /^([A-Z])\d[A-Z]\s?\d[A-Z]\d$/i) {
+    } elsif ($postal =~ /^([A-Z]\d[A-Z])\s?\d[A-Z]\d$/i) {
         # Canadian: A1A 1A1 or A1A1A1
         $country = 'ca';
-        $canadian_fsa = uc($1);
+        $canadian_fsa = uc($1);  # Extract full 3-character FSA (e.g., N7L)
         # Try with space normalized
         my $normalized = uc($postal);
         $normalized =~ s/\s+//g;  # Remove any spaces
@@ -596,21 +649,40 @@ sub postal_to_coordinates {
             
             # For Canadian postal codes, Nominatim often lacks detailed data
             # Use FSA-to-city mapping as fallback
-            if ($country eq 'ca' && $canadian_fsa && exists $canadian_fsa_cities{$canadian_fsa}) {
-                my $city_name = $canadian_fsa_cities{$canadian_fsa};
-                DEBUG("  Trying Canadian city lookup: $city_name (FSA: $canadian_fsa)") if $options{verbose};
+            # Try 3-character FSA first (e.g., N7L), then single-letter fallback (e.g., N)
+            if ($country eq 'ca' && $canadian_fsa) {
+                my $city_name;
+                my $lookup_fsa;
                 
-                my $city_url = "https://nominatim.openstreetmap.org/search?q=$city_name&format=json&limit=1";
-                sleep 1;  # Rate limit
-                $response = $ua->get($city_url);
-                if ($response->is_success) {
-                    $data = eval { decode_json($response->decoded_content) };
-                    if ($data && ref($data) eq 'ARRAY' && @$data > 0) {
-                        my $lat = $data->[0]->{lat};
-                        my $lon = $data->[0]->{lon};
-                        my $display = $data->[0]->{display_name} || $city_name;
-                        DEBUG("  Found via city lookup: $display") if $options{verbose};
-                        return ($lat, $lon);
+                # Try 3-character FSA first
+                if (exists $canadian_fsa_cities{$canadian_fsa}) {
+                    $city_name = $canadian_fsa_cities{$canadian_fsa};
+                    $lookup_fsa = $canadian_fsa;
+                }
+                # Fall back to single-letter FSA
+                elsif (length($canadian_fsa) >= 1) {
+                    my $single_letter = substr($canadian_fsa, 0, 1);
+                    if (exists $canadian_fsa_cities{$single_letter}) {
+                        $city_name = $canadian_fsa_cities{$single_letter};
+                        $lookup_fsa = $single_letter;
+                    }
+                }
+                
+                if ($city_name) {
+                    DEBUG("  Trying Canadian city lookup: $city_name (FSA: $lookup_fsa)") if $options{verbose};
+                    
+                    my $city_url = "https://nominatim.openstreetmap.org/search?q=$city_name&format=json&limit=1";
+                    sleep 1;  # Rate limit
+                    $response = $ua->get($city_url);
+                    if ($response->is_success) {
+                        $data = eval { decode_json($response->decoded_content) };
+                        if ($data && ref($data) eq 'ARRAY' && @$data > 0) {
+                            my $lat = $data->[0]->{lat};
+                            my $lon = $data->[0]->{lon};
+                            my $display = $data->[0]->{display_name} || $city_name;
+                            DEBUG("  Found via city lookup: $display") if $options{verbose};
+                            return ($lat, $lon);
+                        }
                     }
                 }
             }
