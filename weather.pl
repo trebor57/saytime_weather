@@ -59,13 +59,21 @@ use constant {
 my %options = (
     verbose => 0,  # Default to non-verbose
     config_file => undef,  # Custom config file path
+    default_country => undef,  # Override default_country from config
+    temperature_mode => undef,  # Override Temperature_mode from config
+    no_cache => 0,  # Disable cache for this run
+    no_condition => 0,  # Disable condition announcements for this run
 );
 
 # Parse command line options first (before processing positional args)
 GetOptions(
-    'c|config=s' => \$options{config_file},
-    'h|help'     => sub { show_usage(); },
-    'v|version'  => sub { print "weather.pl version " . VERSION . "\n"; exit 0; },
+    'c|config=s'          => \$options{config_file},
+    'd|default-country=s' => \$options{default_country},
+    't|temperature-mode=s' => \$options{temperature_mode},
+    'no-cache'            => \$options{no_cache},
+    'no-condition'        => \$options{no_condition},
+    'h|help'              => sub { show_usage(); },
+    'version'             => sub { print "weather.pl version " . VERSION . "\n"; exit 0; },
 ) or show_usage();
 
 # Source the allstar variables - try each config path
@@ -223,6 +231,20 @@ $config{default_country} = "us" unless defined $config{default_country};  # Defa
 $config{weather_provider} = "openmeteo" unless defined $config{weather_provider};  # Default to Open-Meteo
 $config{cache_enabled} = "YES" unless defined $config{cache_enabled};
 $config{cache_duration} = "1800" unless defined $config{cache_duration};  # 30 minutes default
+
+# Apply command line overrides (these take precedence over config file)
+if (defined $options{default_country}) {
+    $config{default_country} = $options{default_country};
+}
+if (defined $options{temperature_mode}) {
+    $config{Temperature_mode} = uc($options{temperature_mode});
+}
+if ($options{no_cache}) {
+    $config{cache_enabled} = "NO";
+}
+if ($options{no_condition}) {
+    $config{process_condition} = "NO";
+}
 
 # Initialize cache if enabled
 my $cache;
@@ -507,14 +529,21 @@ sub show_usage {
     print "  location_id    Postal code, ZIP code, or location identifier\n";
     print "  v              Optional: Display text only (verbose mode), no sound output\n\n";
     print "Options:\n";
-    print "  -c, --config FILE   Use alternate configuration file\n";
-    print "  -h, --help          Show this help message\n";
-    print "  -v, --version       Show version information\n\n";
+    print "  -c, --config FILE        Use alternate configuration file\n";
+    print "  -d, --default-country CC Override default country (us, ca, fr, de, uk, etc.)\n";
+    print "  -t, --temperature-mode M Override temperature mode (F or C)\n";
+    print "  --no-cache               Disable caching for this request\n";
+    print "  --no-condition           Skip weather condition announcements\n";
+    print "  -h, --help               Show this help message\n";
+    print "  --version                Show version information\n\n";
     print "Examples:\n";
-    print "  $0 90210                           # Get weather for Beverly Hills\n";
-    print "  $0 M5H2N2 v                        # Toronto weather, text only\n";
-    print "  $0 --config /tmp/test.ini 77511    # Use custom config file\n";
-    print "  $0 -c ~/.weather.ini K1A0B1        # Ottawa with custom config\n\n";
+    print "  $0 90210                    # Get weather for Beverly Hills, CA\n";
+    print "  $0 M5H2N2 v                 # Toronto weather, text only\n";
+    print "  $0 -d fr 75001              # Test Paris with French lookup\n";
+    print "  $0 -d de 10115 v            # Test Berlin with German lookup\n";
+    print "  $0 -t C K1A0B1              # Get Ottawa weather in Celsius\n";
+    print "  $0 --no-cache 77511         # Get fresh weather (bypass cache)\n";
+    print "  $0 -d ca --no-cache M5H2N2  # Test Toronto with Canadian lookup, no cache\n\n";
     print "Default Configuration Files (searched in order):\n";
     print "  /etc/asterisk/local/weather.ini\n";
     print "  /etc/asterisk/weather.ini\n";
@@ -525,7 +554,8 @@ sub show_usage {
     print "  - default_country: ISO country code for postal lookups (default: us)\n";
     print "  - weather_provider: Weather data source (default: openmeteo)\n";
     print "  - cache_enabled: YES/NO (default: YES)\n";
-    print "  - cache_duration: Cache duration in seconds (default: 1800)\n";
+    print "  - cache_duration: Cache duration in seconds (default: 1800)\n\n";
+    print "Note: Command line options override configuration file settings for that run.\n";
     exit 1;
 }
 
