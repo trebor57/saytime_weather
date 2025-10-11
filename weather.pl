@@ -342,6 +342,35 @@ if (not defined $current or $current eq "") {
     my $lat;
     my $lon;
     
+    # Try ICAO/METAR first if it looks like an airport code
+    if (is_icao_code($location)) {
+        DEBUG("Detected ICAO code, trying METAR...") if $options{verbose};
+        my ($metar_temp, $metar_cond) = fetch_metar_weather($location);
+        
+        if (defined $metar_temp && defined $metar_cond) {
+            $Temperature = sprintf("%.0f", $metar_temp);
+            $Condition = $metar_cond;
+            $current = "$Condition: $Temperature";
+            $w_type = "metar";
+            
+            DEBUG("METAR: $Temperature°F, $Condition") if $options{verbose};
+            
+            # Cache the METAR data
+            if ($config{cache_enabled} eq "YES" && defined $cache) {
+                $cache->set($location, {
+                    temperature => $Temperature,
+                    condition => $Condition,
+                    type => $w_type,
+                    timezone => ''  # METAR doesn't provide timezone
+                });
+            }
+        } else {
+            DEBUG("METAR fetch failed, falling back to postal code lookup") if $options{verbose};
+        }
+    }
+    
+    # If METAR didn't work or not an ICAO code, try postal code lookup
+    if (not defined $current or $current eq "") {
     # Convert postal code to coordinates using Nominatim
     ($lat, $lon) = postal_to_coordinates($location);
     
@@ -374,6 +403,7 @@ if (not defined $current or $current eq "") {
     }
     
     $w_type = "openmeteo" unless $w_type;
+    }
 }
 
 if (not defined $current or $current eq "") {
@@ -526,7 +556,8 @@ sub show_usage {
     print "weather.pl version " . VERSION . "\n\n";
     print "Usage: $0 [OPTIONS] location_id [v]\n\n";
     print "Arguments:\n";
-    print "  location_id    Postal code, ZIP code, or location identifier\n";
+    print "  location_id    Postal code, ZIP code, or ICAO airport code\n";
+    print "                 ICAO examples: KJFK, EGLL, CYYZ, NZSP, LFPG, RJAA\n";
     print "  v              Optional: Display text only (verbose mode), no sound output\n\n";
     print "Options:\n";
     print "  -c, --config FILE        Use alternate configuration file\n";
@@ -537,13 +568,21 @@ sub show_usage {
     print "  -h, --help               Show this help message\n";
     print "  --version                Show version information\n\n";
     print "Examples:\n";
-    print "  $0 90210                    # Get weather for Beverly Hills, CA\n";
-    print "  $0 M5H2N2 v                 # Toronto weather, text only\n";
-    print "  $0 -d fr 75001              # Test Paris with French lookup\n";
-    print "  $0 -d de 10115 v            # Test Berlin with German lookup\n";
-    print "  $0 -t C K1A0B1              # Get Ottawa weather in Celsius\n";
-    print "  $0 --no-cache 77511         # Get fresh weather (bypass cache)\n";
-    print "  $0 -d ca --no-cache M5H2N2  # Test Toronto with Canadian lookup, no cache\n\n";
+    print "  Postal Codes:\n";
+    print "    $0 90210                    # Beverly Hills, CA (ZIP)\n";
+    print "    $0 M5H2N2 v                 # Toronto, ON (postal code)\n";
+    print "    $0 -d fr 75001              # Paris, France\n";
+    print "    $0 -d de 10115 v            # Berlin, Germany\n\n";
+    print "  ICAO Airport Codes:\n";
+    print "    $0 KJFK v                   # JFK Airport, New York\n";
+    print "    $0 EGLL                     # Heathrow, London\n";
+    print "    $0 CYYZ v                   # Toronto Pearson\n";
+    print "    $0 NZSP v                   # South Pole Station\n";
+    print "    $0 LFPG                     # Charles de Gaulle, Paris\n";
+    print "    $0 RJAA v                   # Narita, Tokyo\n\n";
+    print "  With Options:\n";
+    print "    $0 -t C KJFK                # JFK in Celsius\n";
+    print "    $0 --no-cache EGLL v        # Fresh METAR from Heathrow\n\n";
     print "Default Configuration Files (searched in order):\n";
     print "  /etc/asterisk/local/weather.ini\n";
     print "  /etc/asterisk/weather.ini\n";
@@ -606,6 +645,121 @@ sub WARN {
     my ($msg) = @_;
     # Only show warnings in verbose mode
     print STDERR "WARNING: $msg\n" if $options{verbose};
+}
+
+# Check if input looks like an ICAO airport code
+sub is_icao_code {
+    my ($code) = @_;
+    
+    # ICAO codes are 4 letters (e.g., KJFK, EGLL, CYYZ, NZSP)
+    return 0 unless $code =~ /^[A-Z]{4}$/i;
+    
+    # Check if it starts with valid ICAO prefixes
+    # K = USA, C = Canada, E = Europe, N = Pacific/Antarctica, R = Asia, etc.
+    my $prefix = uc(substr($code, 0, 1));
+    return 1 if $prefix =~ /^[ABCDEFGHIJKLMNOPQRSTUVWYZ]$/;
+    
+    return 0;
+}
+
+# Fetch weather from METAR (aviation weather)
+sub fetch_metar_weather {
+    my ($icao) = @_;
+    
+    $icao = uc($icao);
+    DEBUG("Fetching METAR for $icao") if $options{verbose};
+    
+    my $ua = LWP::UserAgent->new(timeout => 15);
+    $ua->agent('Mozilla/5.0 (compatible; WeatherBot/1.0)');
+    
+    # Try NOAA Aviation Weather API first
+    my $url = "https://aviationweather.gov/api/data/metar?ids=${icao}&format=raw&hours=0&taf=false";
+    my $response = $ua->get($url);
+    
+    my $metar;
+    if ($response->is_success) {
+        $metar = $response->decoded_content;
+        $metar =~ s/^\s+|\s+$//g;  # Trim whitespace
+    }
+    
+    # Fallback to NWS if Aviation Weather failed
+    if (!$metar || $metar eq '') {
+        DEBUG("  Trying NWS fallback...") if $options{verbose};
+        $url = "https://tgftp.nws.noaa.gov/data/observations/metar/stations/${icao}.TXT";
+        $response = $ua->get($url);
+        if ($response->is_success) {
+            my @lines = split /\n/, $response->decoded_content;
+            # METAR is usually on the second line
+            $metar = $lines[1] if @lines > 1;
+            $metar =~ s/^\s+|\s+$//g if $metar;
+        }
+    }
+    
+    return unless $metar && $metar ne '';
+    
+    DEBUG("  METAR: $metar") if $options{verbose};
+    
+    # Parse temperature and conditions from METAR
+    my $temp_f = parse_metar_temperature($metar);
+    my $condition = parse_metar_condition($metar);
+    
+    return ($temp_f, $condition);
+}
+
+# Parse temperature from METAR report
+sub parse_metar_temperature {
+    my ($metar) = @_;
+    
+    # Temperature format: 25/18 (temp/dewpoint in Celsius)
+    # Or with M prefix for negative: M05/M10
+    if ($metar =~ /\s(M?\d{2})\/(M?\d{2})\s/) {
+        my $temp_c = $1;
+        # Convert M prefix to minus sign
+        $temp_c =~ s/^M/-/;
+        # Remove leading zeros
+        $temp_c =~ s/^(-?)0+(\d)/$1$2/;
+        # Convert to Fahrenheit
+        my $temp_f = ($temp_c * 9/5) + 32;
+        return sprintf("%.0f", $temp_f);
+    }
+    
+    return undef;
+}
+
+# Parse weather condition from METAR report
+sub parse_metar_condition {
+    my ($metar) = @_;
+    
+    # Check for weather phenomena codes
+    return "Thunderstorm" if $metar =~ /\bTS\b/;  # Thunderstorm
+    return "Heavy Rain" if $metar =~ /\+RA\b/;     # Heavy rain
+    return "Rain" if $metar =~ /(-|VC)?RA\b/;      # Rain
+    return "Light Rain" if $metar =~ /-RA\b/;      # Light rain
+    return "Drizzle" if $metar =~ /DZ\b/;          # Drizzle
+    return "Snow" if $metar =~ /SN\b/;             # Snow
+    return "Sleet" if $metar =~ /PL\b/;            # Ice pellets
+    return "Hail" if $metar =~ /GR\b/;             # Hail
+    return "Foggy" if $metar =~ /\bFG\b/;          # Fog
+    return "Mist" if $metar =~ /BR\b/;             # Mist
+    
+    # Check sky conditions (last reported condition wins)
+    my $sky_condition = "Clear";
+    
+    # Parse sky coverage (FEW, SCT, BKN, OVC)
+    # OVC = Overcast, BKN = Broken, SCT = Scattered, FEW = Few
+    if ($metar =~ /\bOVC\d{3}\b/) {
+        $sky_condition = "Overcast";
+    } elsif ($metar =~ /\bBKN\d{3}\b/) {
+        $sky_condition = "Cloudy";
+    } elsif ($metar =~ /\bSCT\d{3}\b/) {
+        $sky_condition = "Partly Cloudy";
+    } elsif ($metar =~ /\bFEW\d{3}\b/) {
+        $sky_condition = "Clear";
+    } elsif ($metar =~ /\b(CLR|SKC)\b/) {
+        $sky_condition = "Clear";
+    }
+    
+    return $sky_condition;
 }
 
 # Convert postal code to coordinates using Nominatim/OpenStreetMap API (free, no key, worldwide)
