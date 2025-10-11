@@ -1,3 +1,16 @@
+saytime-weather (2.7.3) unstable; urgency=high
+
+  * CRITICAL: Fixed Canadian postal code location accuracy
+    - Ontario postal codes were resolving to wrong coordinates
+    - Example: N7L3R5 (Chatham) showed 35°F instead of 47°F (11°F off!)
+    - Added detailed 3-character FSA mapping for 50+ Ontario postal areas
+    - Now maps N7L→Chatham-Kent, N6A→London, N8W→Windsor, N7M→Sarnia, etc.
+  * Improved FSA lookup logic to check 3-character codes first
+  * Better single-letter fallbacks (N→London, L→Mississauga, P→Thunder Bay)
+  * Fixed indentation bug in Canadian FSA fallback code
+
+ -- Jory A. Pratt <geekypenguin@gmail.com>  Sat, 11 Oct 2025 06:15:00 -0500
+
 saytime-weather (2.7.2) unstable; urgency=high
 
   * CRITICAL: Fixed temperature conversion bug for Celsius/Canadian users
