@@ -2,15 +2,17 @@
 
 A comprehensive time and weather announcement system for Asterisk PBX, designed specifically for radio systems, repeater controllers, and amateur radio applications. This system provides automated voice announcements of current time and weather conditions using high-quality synthesized speech.
 
-**Version 2.7.3** - Fixed Canadian postal code accuracy - Ontario locations now resolve to correct coordinates!
+**Version 2.7.4** - Major feature release! ICAO airport support, command line overrides, and day/night detection!
 
 ## 🚀 Features
 
 - **Time Announcements**: Support for both 12-hour and 24-hour time formats
 - **Location-Aware Timezone**: Time automatically matches weather location timezone
-- **Worldwide Weather**: Real-time weather from any postal code globally via Open-Meteo
+- **Worldwide Weather**: Real-time weather from postal codes OR ICAO airport codes globally
+- **ICAO Airport Support**: 6000+ airports worldwide (KJFK, EGLL, CYYZ, LFPG, RJAA, NZSP)
 - **No API Keys Required**: Fully functional out of the box - zero configuration!
 - **Global Postal Codes**: US ZIP codes, Canadian postal codes, European codes, and more
+- **Day/Night Detection**: Intelligent conditions (never says "sunny" at 2 AM)
 - **Smart Greetings**: Context-aware greeting messages (morning/afternoon/evening)
 - **Flexible Output**: Voice playback or file generation for later use
 - **Comprehensive Logging**: Quiet by default, detailed with verbose flag
@@ -38,12 +40,12 @@ A comprehensive time and weather announcement system for Asterisk PBX, designed 
 1. **Download the latest release**:
    ```bash
    cd /tmp
-   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.7.3/saytime-weather_2.7.3_all.deb
+   wget https://github.com/hardenedpenguin/saytime_weather/releases/download/v2.7.4/saytime-weather_2.7.4_all.deb
    ```
 
 2. **Install the package**:
    ```bash
-   sudo apt install ./saytime-weather_2.7.3_all.deb
+   sudo apt install ./saytime-weather_2.7.4_all.deb
    ```
 
    This will automatically:
@@ -101,6 +103,16 @@ cache_duration = 1800                   ; 30 minutes in seconds
 ```
 
 **That's it!** No API keys required.
+
+### What Changed in v2.7.4?
+
+**New in 2.7.4 - Major Feature Release! 🎉**
+- ✈️ **ICAO Airport Support** - 6000+ airports worldwide (KJFK, EGLL, CYYZ, LFPG, RJAA)
+- 🎛️ **Command Line Overrides** - Test any country with `-d fr 75001` or Celsius with `-t C`
+- 🌞🌙 **Day/Night Detection** - Never says "sunny" at 2 AM anymore!
+- 📝 **Enhanced Config** - Comprehensive documentation in weather.ini template
+- 🔧 **METAR Integration** - Aviation-grade weather from NOAA
+- 🚀 **Improved API** - Updated to latest Open-Meteo current parameter
 
 ### What Changed in v2.7.3?
 
@@ -374,6 +386,107 @@ This project is licensed under the terms specified in the LICENSE file.
 - **GitHub Issues**: [Report bugs or request features](https://github.com/w5gle/saytime-weather/issues)
 - **Documentation**: Check the [Wiki](https://github.com/w5gle/saytime-weather/wiki) for detailed guides
 - **Community**: Join our [Discussions](https://github.com/w5gle/saytime-weather/discussions)
+
+## ✨ What's New in Version 2.7.4
+
+### Major New Features 🎉
+
+#### 1. ✈️ ICAO Airport Code Support (6000+ Airports!)
+- **NEW**: Full support for ICAO airport codes worldwide
+- Fetches **METAR** (aviation weather) from NOAA Aviation Weather API
+- **Automatic detection**: 4-letter codes = ICAO, others = postal codes
+- **Global coverage**: USA (K), Canada (C), Europe (E/L), Asia (R), Pacific (N), and more
+- **Aviation-grade data**: Hourly updates, official government observations
+- **Smart fallback**: If METAR unavailable, tries postal code lookup
+
+**Examples:**
+```bash
+weather.pl KJFK v        # JFK Airport, New York → 61°F, Drizzle
+weather.pl EGLL v        # Heathrow, London → 59°F, Partly Cloudy
+weather.pl CYYZ v        # Toronto Pearson → 55°F, Cloudy
+weather.pl LFPG v        # Paris CDG → 63°F, Clear
+weather.pl RJAA v        # Tokyo Narita → 61°F, Rain
+weather.pl NZSP v        # South Pole Station (if METAR available)
+```
+
+#### 2. 🎛️ Command Line Option Overrides
+- **NEW**: Override config settings without editing files!
+- Perfect for **testing different locations** without changing config
+- All overrides are **temporary** - config file unchanged
+
+**New Options:**
+- `-d, --default-country CC` - Override country (us, ca, fr, de, uk, etc.)
+- `-t, --temperature-mode M` - Override temp mode (F or C)
+- `--no-cache` - Disable caching for this request
+- `--no-condition` - Skip weather condition announcements
+- `-c, --config FILE` - Use alternate config file
+- `-h, --help` - Show detailed help
+- `--version` - Show version number
+
+**Examples:**
+```bash
+weather.pl -d fr 75001              # Test Paris with French lookup
+weather.pl -d de 10115 v            # Test Berlin with German lookup
+weather.pl -t C 90210               # Get LA weather in Celsius
+weather.pl --no-cache KJFK v        # Fresh METAR from JFK
+weather.pl -d ca M5H2N2             # Force Canadian lookup for Toronto
+```
+
+#### 3. 🌞🌙 Day/Night Detection
+- **NEW**: Context-aware weather conditions based on local time
+- **Problem Solved**: No more "sunny" announcements at 2 AM!
+- Uses Open-Meteo **is_day** field (calculated from sunrise/sunset)
+- **Automatic**: Based on location's local timezone
+
+**How It Works:**
+| Weather Code | Daytime Condition | Nighttime Condition |
+|--------------|-------------------|---------------------|
+| Code 0 | Clear | Clear |
+| Code 1 | **Sunny** ☀️ | **Mainly Clear** 🌙 |
+| Code 2 | **Mostly Sunny** ☀️ | **Partly Cloudy** 🌙 |
+| Code 3+ | Same (rain, snow, etc.) | Same |
+
+**Examples:**
+```
+Los Angeles at 2:00 PM → "Sunny, 72°F" ✅
+Los Angeles at 2:00 AM → "Mainly Clear, 58°F" ✅ (not "sunny"!)
+Tokyo at 11:00 PM → "Partly Cloudy, 61°F" ✅ (not "mostly sunny"!)
+```
+
+### Additional Improvements
+
+#### Enhanced Configuration File
+- 📝 Comprehensive documentation with examples
+- 📋 Detailed explanations for each setting
+- 💡 Usage examples included in config file
+- 🎯 Clear guidance on when to change settings
+- 🔧 Shows all available options with defaults
+
+**New config template includes:**
+- Section headers (TEMPERATURE SETTINGS, LOCATION SETTINGS, etc.)
+- Multiple examples for each option
+- Recommended values and use cases
+- Testing commands at bottom
+
+#### Improved Help Text
+- 📖 Detailed help with `-h, --help`
+- 📚 Examples for both ICAO and postal codes
+- 🌍 Shows all command line options
+- 📍 Lists default config file search order
+
+#### API Updates
+- 🔄 Updated Open-Meteo API from `current_weather` to `current` parameter
+- 📡 Now requests `temperature_2m`, `weather_code`, and `is_day` fields
+- ⚡ Maintains backward compatibility
+
+### Testing & Verification
+
+All features tested and working:
+- ✅ ICAO: KJFK, CYYZ, EGLL, LFPG, RJAA
+- ✅ Postal: 90210, M5H2N2, N7L3R5, 75001
+- ✅ Overrides: `-d fr`, `-t C`, `--no-cache`
+- ✅ Day/Night: Correct conditions for local time
+- ✅ Special: SOUTHPOLE, MCMURDO still work
 
 ## ✨ What's New in Version 2.7.3
 
