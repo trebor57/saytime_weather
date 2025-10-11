@@ -26,6 +26,7 @@ use JSON;
 use Encode qw(decode);
 use Cache::FileCache;
 use File::Spec;
+use Getopt::Long qw(:config no_ignore_case bundling);
 
 # Define paths at the top of the script
 my @CONFIG_PATHS = (
@@ -57,12 +58,30 @@ use constant {
 # Add options hash near the top
 my %options = (
     verbose => 0,  # Default to non-verbose
+    config_file => undef,  # Custom config file path
 );
+
+# Parse command line options first (before processing positional args)
+GetOptions(
+    'c|config=s' => \$options{config_file},
+    'h|help'     => sub { show_usage(); },
+    'v|version'  => sub { print "weather.pl version " . VERSION . "\n"; exit 0; },
+) or show_usage();
 
 # Source the allstar variables - try each config path
 my %config;
 my $config_created = 0;
-foreach my $config_file (@CONFIG_PATHS) {
+
+# If custom config file specified, use only that
+my @config_paths_to_try = $options{config_file} ? ($options{config_file}) : @CONFIG_PATHS;
+
+# If custom config specified but doesn't exist, error out
+if ($options{config_file} && !-f $options{config_file}) {
+    print STDERR "ERROR: Custom config file not found: $options{config_file}\n";
+    exit 1;
+}
+
+foreach my $config_file (@config_paths_to_try) {
     if (-f $config_file) {
         open my $fh, "<", $config_file or next;
         while (my $line = <$fh>) {
@@ -483,8 +502,24 @@ if (!-w TMP_DIR()) {
 # Add version to usage
 sub show_usage {
     print "weather.pl version " . VERSION . "\n\n";
-    print "Usage: $0 location_id\n\n";
-    print "Configuration in /etc/asterisk/local/weather.ini:\n";
+    print "Usage: $0 [OPTIONS] location_id [v]\n\n";
+    print "Arguments:\n";
+    print "  location_id    Postal code, ZIP code, or location identifier\n";
+    print "  v              Optional: Display text only (verbose mode), no sound output\n\n";
+    print "Options:\n";
+    print "  -c, --config FILE   Use alternate configuration file\n";
+    print "  -h, --help          Show this help message\n";
+    print "  -v, --version       Show version information\n\n";
+    print "Examples:\n";
+    print "  $0 90210                           # Get weather for Beverly Hills\n";
+    print "  $0 M5H2N2 v                        # Toronto weather, text only\n";
+    print "  $0 --config /tmp/test.ini 77511    # Use custom config file\n";
+    print "  $0 -c ~/.weather.ini K1A0B1        # Ottawa with custom config\n\n";
+    print "Default Configuration Files (searched in order):\n";
+    print "  /etc/asterisk/local/weather.ini\n";
+    print "  /etc/asterisk/weather.ini\n";
+    print "  /usr/local/etc/weather.ini\n\n";
+    print "Configuration Options:\n";
     print "  - Temperature_mode: F/C (set to C for Celsius, F for Fahrenheit)\n";
     print "  - process_condition: YES/NO (default: YES)\n";
     print "  - default_country: ISO country code for postal lookups (default: us)\n";
