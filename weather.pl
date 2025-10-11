@@ -421,7 +421,6 @@ sub show_usage {
     print "  - Temperature_mode: F/C (set to C for Celsius, F for Fahrenheit)\n";
     print "  - process_condition: YES/NO (default: YES)\n";
     print "  - use_accuweather: YES/NO (default: YES)\n";
-    print "  - wunderground_api_key: Your Weather Underground API key\n";
     print "  - cache_enabled: YES/NO (default: YES)\n";
     print "  - cache_duration: Cache duration in seconds (default: 1800)\n";
     exit 1;

@@ -22,9 +22,6 @@ Temperature_mode = F
 ; Weather data sources
 use_accuweather = YES
 
-; Weather Underground API key (if using Wunderground stations)
-wunderground_api_key = 
-
 ; TimeZoneDB API key for timezone lookup (get free key from https://timezonedb.com)
 timezone_api_key = 
 
