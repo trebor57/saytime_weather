@@ -14,6 +14,13 @@ saytime-weather (2.7.4) unstable; urgency=medium
     - Prevents saying "sunny" at 2 AM (now says "mainly clear")
     - Uses Open-Meteo is_day field for accurate day/night awareness
     - Code 1-2 now context-aware: "Sunny" during day, "Clear" at night
+  * NEW FEATURE: 50+ special remote locations for DXpeditions and research
+    - Expanded from 4 to 50+ locations without postal codes
+    - Antarctica: 13 research stations (Casey, Syowa, Concordia, Halley, etc.)
+    - Arctic: 7 locations (Alert, Eureka, Thule, Longyearbyen, etc.)
+    - DXpedition islands: Heard (VK0), Bouvet (3Y0), Kerguelen (FT5), etc.
+    - Pacific atolls: Midway, Wake, Johnston, Palmyra, etc.
+    - Remote islands: Easter, Pitcairn, Tristan, Ascension, etc.
   * Improved configuration file with comprehensive documentation
     - Added detailed explanations for each setting
     - Included practical examples and usage instructions

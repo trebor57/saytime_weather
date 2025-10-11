@@ -88,6 +88,7 @@ cache_duration = 1800                   ; 30 minutes in seconds
 - ✈️ **ICAO Airport Support** - 6000+ airports worldwide (KJFK, EGLL, CYYZ, LFPG, RJAA)
 - 🎛️ **Command Line Overrides** - Test any country with `-d fr 75001` or Celsius with `-t C`
 - 🌞🌙 **Day/Night Detection** - Never says "sunny" at 2 AM anymore!
+- 🗺️ **50+ Special Locations** - DXpedition sites & research stations (HEARD, BOUVET, ALERT, etc.)
 - 📝 **Enhanced Config** - Comprehensive documentation in weather.ini template
 - 🔧 **METAR Integration** - Aviation-grade weather from NOAA
 - 🚀 **Improved API** - Updated to latest Open-Meteo current parameter
@@ -254,7 +255,33 @@ exten => 5678,3,Hangup()
 - **Germany**: 5-digit postal codes (e.g., `10115`, `80331`, `20095`)
 - **France**: 5-digit postal codes (e.g., `75001`, `69001`)
 - **United Kingdom**: Postal codes (e.g., `SW1A1AA`, `EC1A1BB`)
+- **ICAO Codes**: 4-letter airport codes (e.g., `KJFK`, `EGLL`, `CYYZ`, `LFPG`)
 - **And many more!** - Works with most international postal codes
+
+### Special Remote Locations (50+)
+
+**NEW in v2.7.4**: Support for remote locations without postal codes!
+
+Perfect for DXpeditions, research stations, and extreme locations:
+
+**Antarctica** (13 stations): `SOUTHPOLE`, `MCMURDO`, `PALMER`, `VOSTOK`, `CASEY`, `MAWSON`, `DAVIS`, `SCOTTBASE`, `SYOWA`, `CONCORDIA`, `HALLEY`, `DUMONT`, `SANAE`
+
+**Arctic** (7 locations): `ALERT` (northernmost!), `EUREKA`, `THULE`, `LONGYEARBYEN`, `BARROW`, `RESOLUTE`, `GRISE`
+
+**DXpedition Islands**: `HEARD` (VK0), `BOUVET` (3Y0), `KERGUELEN` (FT5), `CROZET` (FT4), `AMSTERDAM` (FT5), `MACQUARIE` (VK0)
+
+**South Atlantic**: `TRISTAN` (ZD9), `ASCENSION` (ZD8), `STHELENA` (ZD7), `FALKLANDS` (VP8), `SOUTHGEORGIA` (VP8), `GOUGH` (ZD9)
+
+**Pacific Islands**: `MIDWAY` (KH4), `WAKE` (KH9), `EASTER` (CE0Y), `PITCAIRN` (VP6), `GALAPAGOS` (HC8), `MARQUESAS` (FO), `CLIPPERTON`, and more
+
+**Examples:**
+```bash
+weather.pl ALERT v        # 26°F, -3°C / Clear (Arctic)
+weather.pl HEARD v        # 8°F, -13°C / Light Snow Showers
+weather.pl BOUVET v       # 26°F, -3°C / Overcast (3Y0)
+weather.pl EASTER v       # 62°F, 17°C / Sunny
+weather.pl MIDWAY v       # 80°F, 27°C / Partly Cloudy
+```
 
 ### Timezone Feature
 
