@@ -672,10 +672,10 @@ sub fetch_weather_openmeteo {
     my $ua = LWP::UserAgent->new(timeout => 15);
     $ua->agent('Mozilla/5.0 (compatible; WeatherBot/1.0)');
     
-    my $temp_unit = $config{Temperature_mode} eq "C" ? "celsius" : "fahrenheit";
+    # Always request in Fahrenheit, convert to Celsius later if needed
     my $url = "https://api.open-meteo.com/v1/forecast?" .
               "latitude=$lat&longitude=$lon&current_weather=true&" .
-              "temperature_unit=$temp_unit&timezone=auto";
+              "temperature_unit=fahrenheit&timezone=auto";
     
     my $response = $ua->get($url);
     if ($response->is_success) {
