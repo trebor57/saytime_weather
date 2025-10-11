@@ -95,25 +95,92 @@ foreach my $config_file (@CONFIG_PATHS) {
                 or die "Cannot create config file $config_file: $!";
             
             print $fh <<'EOT';
-; Weather configuration
-[weather]
-; Process weather condition announcements (YES/NO)
-process_condition = YES
+; ============================================================================
+; Weather Configuration for saytime-weather
+; ============================================================================
+; This file controls how weather data is fetched and announced.
+; All settings have sensible defaults - no changes required to get started!
+; ============================================================================
 
-; Temperature display mode (F for Fahrenheit, C for Celsius)
+[weather]
+
+; ============================================================================
+; TEMPERATURE SETTINGS
+; ============================================================================
+
+; Temperature display mode: F for Fahrenheit, C for Celsius
+; Default: F
+; Examples: Temperature_mode = F  (for 72°F)
+;           Temperature_mode = C  (for 22°C)
 Temperature_mode = F
 
-; Default country for postal code lookups (helps with 5-digit codes)
-; Options: us, ca, de, fr, uk, etc. (ISO 3166-1 alpha-2 codes)
-; Leave blank for international search
+; ============================================================================
+; CONDITION ANNOUNCEMENTS
+; ============================================================================
+
+; Process and announce weather conditions (cloudy, rain, clear, etc.)
+; Set to NO to only announce temperature
+; Default: YES
+process_condition = YES
+
+; ============================================================================
+; LOCATION SETTINGS
+; ============================================================================
+
+; Default country for ambiguous postal code lookups
+; Helps with 5-digit codes that could be multiple countries
+; Use ISO 3166-1 alpha-2 country codes: us, ca, de, fr, uk, etc.
+; Leave blank for international search (slower)
+; Default: us
+; Examples: default_country = us  (prioritize US ZIP codes)
+;           default_country = ca  (prioritize Canadian postal codes)
+;           default_country =     (search all countries)
 default_country = us
 
-; Weather data source (openmeteo is free, no API key required)
+; ============================================================================
+; WEATHER DATA SOURCE
+; ============================================================================
+
+; Weather data provider (currently only openmeteo supported)
+; Open-Meteo is free, requires no API key, and provides worldwide coverage
+; This option is reserved for future providers
+; Default: openmeteo
 weather_provider = openmeteo
 
-; Cache settings
+; ============================================================================
+; CACHE SETTINGS
+; ============================================================================
+
+; Enable caching to reduce API calls and improve response time
+; Recommended: YES (faster repeated lookups, reduces API load)
+; Set to NO only for testing or if you need real-time updates
+; Default: YES
 cache_enabled = YES
+
+; Cache duration in seconds (how long to keep weather data)
+; Default: 1800 (30 minutes)
+; Examples: cache_duration = 1800   (30 minutes, recommended)
+;           cache_duration = 3600   (1 hour)
+;           cache_duration = 900    (15 minutes)
+;           cache_duration = 300    (5 minutes, for testing)
 cache_duration = 1800
+
+; ============================================================================
+; USAGE EXAMPLES
+; ============================================================================
+; 
+; Test weather for your location:
+;   /usr/sbin/weather.pl YOUR_POSTAL_CODE v
+;
+; Examples:
+;   /usr/sbin/weather.pl 90210 v          (Beverly Hills, CA)
+;   /usr/sbin/weather.pl M5H2N2 v         (Toronto, ON)
+;   /usr/sbin/weather.pl 10115 v          (Berlin, Germany)
+;
+; Use with Asterisk:
+;   /usr/sbin/saytime.pl -l 90210 -n 1
+;
+; ============================================================================
 EOT
             close $fh;
             
